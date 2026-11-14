@@ -1,0 +1,11 @@
+# Working copies stay LF on every OS, including Windows with core.autocrlf=true.
+# Prettier --check uses endOfLine=lf (Prettier default); CRLF working trees fail.
+* text=auto eol=lf
+
+# The vendored contract is a byte-for-byte copy of the gateway repo's file, and
+# test/contract.test.ts pins its sha256. With core.autocrlf on — the Windows
+# default, and how this repo is checked out — git would rewrite its LFs to CRLFs
+# on checkout, changing that digest and failing the suite on a clean clone while
+# passing on the machine that wrote the file. `-text` turns the conversion off
+# for this path, so the working copy is what was committed.
+contracts/** -text

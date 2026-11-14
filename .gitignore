@@ -1,0 +1,21 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.key
+*.pem
+
+# Build cache
+*.tsbuildinfo
+
+# Claude Code local CLI state
+.claude/

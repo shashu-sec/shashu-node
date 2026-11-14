@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustgateai.io/contracts/memory_context.v1.schema.json",
+  "title": "TrustGate memory_context v1",
+  "description": "The memory declaration carried at trustgate_metadata.memory_context. It declares ONLY the memory items actually bound into the prompt sent to the model. Collectors that observe writes without a model call are out of scope for this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["store", "items"],
+  "properties": {
+    "v": {
+      "description": "Contract version. Absent means 1.",
+      "type": "integer",
+      "const": 1
+    },
+    "store": {
+      "description": "Identifier of the memory store the items came from.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "scope": {
+      "description": "Who may share this memory. Unknown values are invalid.",
+      "type": "string",
+      "enum": ["agent", "crew", "tenant"]
+    },
+    "source": {
+      "description": "What produced this declaration. Unknown values are invalid: a new integration adds a value here in an additive v1 change.",
+      "type": "string",
+      "enum": [
+        "sdk",
+        "manual",
+        "langchain",
+        "llamaindex",
+        "tool",
+        "otel",
+        "n8n",
+        "provider",
+        "hosted",
+        "other"
+      ]
+    },
+    "items": {
+      "description": "The memory items bound into the prompt, in the order they were bound.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "preview"],
+        "properties": {
+          "id": {
+            "description": "Stable identifier of the item within the store.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "preview": {
+            "description": "The item text as bound into the prompt, truncated by the caller if longer than the cap.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "path": {
+            "description": "Where the item sits in the prompt, when the caller knows it.",
+            "type": "string",
+            "maxLength": 512
+          },
+          "written_at": {
+            "description": "When the item was written, RFC 3339, if known.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "write_ref": {
+            "description": "Gateway write reference, when the caller has one.",
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  }
+}

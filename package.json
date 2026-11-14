@@ -1,0 +1,108 @@
+{
+  "name": "@shashu-ai/sdk",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Node.js client for SHASHU by Trustgate AI, a self-hosted AI security gateway. Point it at your own gateway; there is no default endpoint.",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./middleware/vercel-ai": {
+      "types": "./dist/middleware/vercel-ai.d.ts",
+      "import": "./dist/middleware/vercel-ai.js",
+      "require": "./dist/middleware/vercel-ai.cjs"
+    },
+    "./middleware/langchain": {
+      "types": "./dist/middleware/langchain.d.ts",
+      "import": "./dist/middleware/langchain.js",
+      "require": "./dist/middleware/langchain.cjs"
+    },
+    "./middleware/anthropic": {
+      "types": "./dist/middleware/anthropic.d.ts",
+      "import": "./dist/middleware/anthropic.js",
+      "require": "./dist/middleware/anthropic.cjs"
+    },
+    "./middleware/google": {
+      "types": "./dist/middleware/google.d.ts",
+      "import": "./dist/middleware/google.js",
+      "require": "./dist/middleware/google.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/middleware/vercel-ai.ts src/middleware/langchain.ts src/middleware/anthropic.ts src/middleware/google.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts src/middleware/vercel-ai.ts src/middleware/langchain.ts src/middleware/anthropic.ts src/middleware/google.ts --format cjs,esm --dts --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "format:check": "prettier --check src test README.md CHANGELOG.md package.json"
+  },
+  "keywords": [
+    "shashu",
+    "trustgate",
+    "self-hosted",
+    "ai-gateway",
+    "security",
+    "openai",
+    "langchain",
+    "n8n",
+    "vercel"
+  ],
+  "author": "Trustgate AI LLC",
+  "license": "Apache-2.0",
+  "homepage": "https://shashu.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trustgateai-io/shashu-node.git"
+  },
+  "devDependencies": {
+    "@ai-sdk/openai": "2.0.66",
+    "@anthropic-ai/sdk": "0.124.0",
+    "@eslint/js": "^9.39.5",
+    "@google/generative-ai": "0.24.1",
+    "@langchain/core": "1.2.9",
+    "@langchain/openai": "1.5.11",
+    "@types/node": "^20.10.0",
+    "ai": "5.0.98",
+    "ajv": "8.17.1",
+    "eslint": "^9.39.5",
+    "openai": "7.10.0",
+    "prettier": "^3.10.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^2.0.0",
+    "zod": "4.5.4"
+  },
+  "peerDependencies": {
+    "@langchain/core": "^0.3.0 || ^1.0.0",
+    "@langchain/openai": "^0.2.0 || ^1.0.0",
+    "ai": "^3.0.0 || ^4.0.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    },
+    "@langchain/openai": {
+      "optional": true
+    },
+    "@langchain/core": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

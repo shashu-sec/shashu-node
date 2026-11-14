@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustgateai.io/contracts/rag_context.v1.schema.json",
+  "title": "TrustGate rag_context v1",
+  "description": "The retrieval declaration carried at trustgate_metadata.rag_context. It declares ONLY the documents actually bound into the prompt sent to the model — never earlier retrieval stages (candidate sets, rerank inputs, discarded hits), which is why this contract has no 'stages' field and no per-document 'stage'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["corpus", "docs"],
+  "properties": {
+    "v": {
+      "description": "Contract version. Absent means 1.",
+      "type": "integer",
+      "const": 1
+    },
+    "corpus": {
+      "description": "Identifier of the corpus/index the documents were retrieved from.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "query": {
+      "description": "The retrieval query that produced these documents.",
+      "type": "string",
+      "maxLength": 4096
+    },
+    "source": {
+      "description": "What produced this declaration. Unknown values are invalid: a new integration adds a value here in an additive v1 change.",
+      "type": "string",
+      "enum": [
+        "manual",
+        "langchain",
+        "llamaindex",
+        "tool",
+        "otel",
+        "n8n",
+        "provider",
+        "other"
+      ]
+    },
+    "docs": {
+      "description": "The documents bound into the prompt, in the order they were bound.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "preview"],
+        "properties": {
+          "id": {
+            "description": "Stable identifier of the document within the corpus.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "score": {
+            "description": "Retrieval score as the store reported it. Stores use different scales (cosine, dot product, BM25, distance) — do NOT assume 0-1. JSON has no NaN/Infinity literal, so any parseable value here is finite.",
+            "type": "number",
+            "minimum": -1.0,
+            "maximum": 1000000.0
+          },
+          "preview": {
+            "description": "The document text as bound into the prompt, truncated by the caller if longer than the cap.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "source_uri": {
+            "description": "Where the document came from, for provenance.",
+            "type": "string"
+          },
+          "hash": {
+            "description": "Lowercase or uppercase hex digest of the document body.",
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8,64}$"
+          }
+        }
+      }
+    }
+  }
+}
