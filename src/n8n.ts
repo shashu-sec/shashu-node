@@ -1,22 +1,16 @@
 import type { N8nHeaderSnippet } from './types.js';
-import {
-  envGet,
-  API_KEY_ENV,
-  API_KEY_ENV_LEGACY,
-  BASE_URL_ENV,
-  BASE_URL_ENV_LEGACY,
-} from './config.js';
+import { envGet, API_KEY_ENV, BASE_URL_ENV } from './config.js';
 import { getWorkflowContextFromEnv, buildContextHeaders, HEADER_PREFIX } from './context.js';
 import { tracer } from './tracer.js';
 
 /**
  * Returns a pre-formatted JSON object of headers for use in n8n "HTTP Request" nodes.
  * Header keys are lowercase for gateway parity. Includes Shashu auth and workflow
- * context (workflow_id, execution_id, source, x-trustgate-source-tool JSON).
+ * context (workflow_id, execution_id, source, x-shashu-source-tool JSON).
  *
  * Resolution order: (1) arguments apiKey/baseUrl, (2) tracer.configure() values, (3) process.env.
- * When tracer.isActive, context headers include x-trustgate-trace-id, x-trustgate-span-id,
- * and x-trustgate-parent-id so the n8n workflow appears as a child of the current span.
+ * When tracer.isActive, context headers include x-shashu-trace-id, x-shashu-span-id,
+ * and x-shashu-parent-id so the n8n workflow appears as a child of the current span.
  *
  * Use in n8n:
  * 1. Add an "HTTP Request" node.
@@ -29,8 +23,8 @@ import { tracer } from './tracer.js';
  */
 export function getN8nHeaderSnippet(apiKey?: string, baseUrl?: string): N8nHeaderSnippet {
   // Priority 1: arguments, Priority 2: tracer (dynamic config), Priority 3: process.env
-  const key = apiKey ?? tracer.apiKey ?? envGet(API_KEY_ENV, API_KEY_ENV_LEGACY) ?? '';
-  const url = baseUrl ?? tracer.gatewayUrl ?? envGet(BASE_URL_ENV, BASE_URL_ENV_LEGACY) ?? '';
+  const key = apiKey ?? tracer.apiKey ?? envGet(API_KEY_ENV) ?? '';
+  const url = baseUrl ?? tracer.gatewayUrl ?? envGet(BASE_URL_ENV) ?? '';
   const ctx = getWorkflowContextFromEnv();
   const contextHeaders = buildContextHeaders(ctx);
 

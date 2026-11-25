@@ -36,7 +36,7 @@ function bodyOf(seen: Seen): Record<string, unknown> {
 
 beforeEach(() => clear());
 afterEach(() => {
-  delete process.env.TRUSTGATE_DISABLE;
+  delete process.env.SHASHU_DISABLE;
   clear();
 });
 
@@ -69,7 +69,7 @@ describe('joiner, populated bus', () => {
       body: JSON.stringify({ model: 'm', messages: [] }),
     });
 
-    const metadata = bodyOf(underlying.calls[0]).trustgate_metadata as Record<string, unknown>;
+    const metadata = bodyOf(underlying.calls[0]).shashu_metadata as Record<string, unknown>;
     assertValidRagContext(metadata.rag_context);
     expect(metadata.rag_context).toMatchObject({
       v: 1,
@@ -94,8 +94,8 @@ describe('joiner, populated bus', () => {
     await send();
     await send();
 
-    expect(bodyOf(underlying.calls[0]).trustgate_metadata).toBeDefined();
-    expect(bodyOf(underlying.calls[1]).trustgate_metadata).toBeUndefined();
+    expect(bodyOf(underlying.calls[0]).shashu_metadata).toBeDefined();
+    expect(bodyOf(underlying.calls[1]).shashu_metadata).toBeUndefined();
   });
 
   it('leaves an explicit rag_context alone and discards the ambient one', async () => {
@@ -104,7 +104,7 @@ describe('joiner, populated bus', () => {
     declareRetrieval(['ambient'], { corpus: 'ambient-corpus' });
     const explicit = {
       model: 'm',
-      trustgate_metadata: {
+      shashu_metadata: {
         rag_context: { v: 1, corpus: 'explicit', docs: [{ id: 'E', preview: 'e' }] },
       },
     };
@@ -165,7 +165,7 @@ describe('joiner, populated bus', () => {
     const sent = underlying.calls[0].input as Request;
     expect(sent).toBeInstanceOf(Request);
     const body = JSON.parse(await sent.text());
-    expect(body.trustgate_metadata.rag_context.docs[0].preview).toBe('a');
+    expect(body.shashu_metadata.rag_context.docs[0].preview).toBe('a');
   });
 });
 
@@ -203,13 +203,13 @@ describe('joiner, bodies it must not corrupt', () => {
   });
 });
 
-describe('joiner, TRUSTGATE_DISABLE', () => {
+describe('joiner, SHASHU_DISABLE', () => {
   it('sends the request untouched and drops what was already declared', async () => {
     const underlying = spy();
     const join = withRetrievalJoiner(underlying.fn);
     declareRetrieval(['a'], { corpus: 'c' });
     expect(snapshot()).toHaveLength(1); // declared before the switch flipped
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     const init = { method: 'POST', body: JSON.stringify({ model: 'm' }) };
 
     await join('https://gw.invalid/v1/chat/completions', init);
@@ -219,7 +219,7 @@ describe('joiner, TRUSTGATE_DISABLE', () => {
   });
 
   it('makes declareRetrieval itself a no-op', () => {
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     declareRetrieval(['a'], { corpus: 'c' });
     expect(hasEvents()).toBe(false);
   });
@@ -250,7 +250,7 @@ describe('joiner, conflicting corpora — prefer a miss over a merge', () => {
       body: JSON.stringify({ model: 'm' }),
     });
 
-    const metadata = bodyOf(underlying.calls[0]).trustgate_metadata as Record<string, unknown>;
+    const metadata = bodyOf(underlying.calls[0]).shashu_metadata as Record<string, unknown>;
     expect(metadata.rag_context).toMatchObject({ corpus: 'handbook' });
     expect(hasEvents()).toBe(false);
   });

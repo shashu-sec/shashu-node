@@ -144,17 +144,17 @@ function envelope(decision: string, code?: string, blocks: Record<string, unknow
 function headers(decision: string, code?: string, extra: Record<string, string> = {}) {
   const out: Record<string, string> = {
     'x-request-id': ID,
-    'x-trustgate-decision': decision,
-    'x-trustgate-inspection': 'input=checked;output=checked',
+    'x-shashu-decision': decision,
+    'x-shashu-inspection': 'input=checked;output=checked',
     'x-should-retry': 'false',
   };
-  if (code !== undefined) out['x-trustgate-code'] = code;
+  if (code !== undefined) out['x-shashu-code'] = code;
   return { ...out, ...extra };
 }
 
 const ok = (decision: string, code?: string, blocks: Record<string, unknown> = {}) => ({
   ...clone(CHAT_200),
-  trustgate: envelope(decision, code, blocks),
+  shashu: envelope(decision, code, blocks),
 });
 
 const refused = (code: string, message: string, blocks: Record<string, unknown>) => ({
@@ -163,7 +163,7 @@ const refused = (code: string, message: string, blocks: Record<string, unknown>)
     type: 'permission_error',
     param: null,
     code,
-    trustgate: envelope('refuse', code, blocks),
+    shashu: envelope('refuse', code, blocks),
   },
   choices: [],
 });
@@ -177,7 +177,7 @@ const SCENARIOS: Record<string, Scenario> = {
     200,
     ok('not_checked', 'attachment_uninspected', { attachments: ATTACHMENTS_FLAGGED }),
     headers('not_checked', 'attachment_uninspected', {
-      'x-trustgate-attachments': 'total=2;scanned=1;not_inspected=1;blocked=0',
+      'x-shashu-attachments': 'total=2;scanned=1;not_inspected=1;blocked=0',
     }),
   ],
   file_blocked: [
@@ -188,7 +188,7 @@ const SCENARIOS: Record<string, Scenario> = {
       { attachments: ATTACHMENTS_BLOCKED }
     ),
     headers('refuse', 'file_policy', {
-      'x-trustgate-attachments': 'total=1;scanned=0;not_inspected=0;blocked=1',
+      'x-shashu-attachments': 'total=1;scanned=0;not_inspected=0;blocked=1',
     }),
   ],
   memory_blocked: [
@@ -199,7 +199,7 @@ const SCENARIOS: Record<string, Scenario> = {
       { memory: MEMORY_BLOCKED }
     ),
     headers('refuse', 'tool_policy', {
-      'x-trustgate-memory': 'writes=1;blocked=1;recalls=0;flagged=0',
+      'x-shashu-memory': 'writes=1;blocked=1;recalls=0;flagged=0',
     }),
   ],
   route_blocked: [
@@ -216,8 +216,8 @@ const SCENARIOS: Record<string, Scenario> = {
     200,
     clone(CHAT_200),
     headers('not_checked', 'attachment_uninspected', {
-      'x-trustgate-attachments': 'total=3;scanned=1;not_inspected=1;blocked=0',
-      'x-trustgate-memory': 'writes=2;blocked=0;recalls=4;flagged=1',
+      'x-shashu-attachments': 'total=3;scanned=1;not_inspected=1;blocked=0',
+      'x-shashu-memory': 'writes=2;blocked=0;recalls=4;flagged=1',
     }),
   ],
 };
@@ -264,7 +264,7 @@ describe('attachments', () => {
     const block = { ...clone(ATTACHMENTS_FLAGGED), scanned_partial: 2 };
     expect(
       decisionFrom(
-        { trustgate: envelope('not_checked', undefined, { attachments: block }) },
+        { shashu: envelope('not_checked', undefined, { attachments: block }) },
         undefined
       )?.filesUnverified
     ).toBe(3);
@@ -301,7 +301,7 @@ describe('attachments', () => {
     const [, body, hdrs] = SCENARIOS.file_flagged;
     const d = decisionFrom(body, {
       ...hdrs,
-      'x-trustgate-attachments': 'total=9;scanned=9;not_inspected=0;blocked=0',
+      'x-shashu-attachments': 'total=9;scanned=9;not_inspected=0;blocked=0',
     });
     expect(d?.attachments?.carrier).toBe('body');
     expect(d?.attachments?.total).toBe(2);
@@ -315,8 +315,8 @@ describe('attachments', () => {
   });
 
   it('names the two count headers the contract names', () => {
-    expect(HEADER_ATTACHMENTS).toBe('x-trustgate-attachments');
-    expect(HEADER_MEMORY).toBe('x-trustgate-memory');
+    expect(HEADER_ATTACHMENTS).toBe('x-shashu-attachments');
+    expect(HEADER_MEMORY).toBe('x-shashu-memory');
   });
 });
 
@@ -408,12 +408,12 @@ describe('tolerance', () => {
           message: 'm',
           type: 'permission_error',
           code: 'made_up_code_zz',
-          trustgate: madeUpEnvelope(),
+          shashu: madeUpEnvelope(),
         },
       },
       headers('refuse', 'made_up_code_zz', {
-        'x-trustgate-attachments': 'total=2;scanned=1;not_inspected=1;blocked=0;made_up=4',
-        'x-trustgate-memory': 'writes=1;blocked=1;made_up=9',
+        'x-shashu-attachments': 'total=2;scanned=1;not_inspected=1;blocked=0;made_up=4',
+        'x-shashu-memory': 'writes=1;blocked=1;made_up=9',
       })
     )!;
     expect(d.code).toBe('made_up_code_zz');
@@ -431,7 +431,7 @@ describe('tolerance', () => {
   it('wrongly typed blocks are ignored, not thrown on', () => {
     let d = decisionFrom(
       {
-        trustgate: envelope('allow', undefined, { attachments: 'x', memory: [1], route_policy: 5 }),
+        shashu: envelope('allow', undefined, { attachments: 'x', memory: [1], route_policy: 5 }),
       },
       undefined
     )!;
@@ -440,7 +440,7 @@ describe('tolerance', () => {
     expect(d.routePolicy).toBeUndefined();
     d = decisionFrom(
       {
-        trustgate: envelope('allow', undefined, {
+        shashu: envelope('allow', undefined, {
           attachments: { total: 'two', items: ['x', null, { state: 3 }] },
         }),
       },
@@ -456,8 +456,8 @@ describe('tolerance', () => {
     const d = decisionFrom(
       undefined,
       headers('allow', undefined, {
-        'x-trustgate-attachments': 'total=;scanned=x;;=3',
-        'x-trustgate-memory': 'nonsense',
+        'x-shashu-attachments': 'total=;scanned=x;;=3',
+        'x-shashu-memory': 'nonsense',
       })
     )!;
     expect(d.decision).toBe('allow');

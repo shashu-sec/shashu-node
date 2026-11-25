@@ -53,8 +53,10 @@ export interface RetryPolicy {
   retryOn5xx: boolean;
   /** Statuses that are never retried, even if a flag above would allow it. */
   neverRetryStatus: number[];
-  /** Ignore the Retry-After header on 429 and use exponential backoff instead. */
+  /** Ignore the Retry-After header on 429/503 and use exponential backoff instead. */
   ignoreRetryAfter: boolean;
+  /** Extra wait as a fraction of the chosen delay (0–20% by default). */
+  jitterFraction: number;
 }
 
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
@@ -66,6 +68,7 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   retryOn5xx: false,
   neverRetryStatus: [400, 401, 403, 404],
   ignoreRetryAfter: false,
+  jitterFraction: 0.2,
 };
 
 /** Resolve a config's retryPolicy: undefined -> default; null -> disabled; object -> merged over defaults. */
@@ -85,8 +88,19 @@ export function resolveRetryPolicy(
 function shouldRetryStatus(policy: RetryPolicy, status: number): boolean {
   if (policy.neverRetryStatus.includes(status)) return false;
   if (status === 429) return policy.retryOn429;
+  if (status === 503) return true;
   if (status >= 500 && status <= 599) return policy.retryOn5xx;
   return false;
+}
+
+function truthyHeader(value: string | null): boolean {
+  return ['1', 'true', 'yes', 'on'].includes((value ?? '').trim().toLowerCase());
+}
+
+function gatewaySaysBusyRetry(res: Response, retryAfter: number | undefined): boolean {
+  if (res.status !== 429 && res.status !== 503) return false;
+  if (truthyHeader(res.headers.get('x-should-retry'))) return true;
+  return retryAfter !== undefined;
 }
 
 /**
@@ -104,8 +118,12 @@ function shouldRetryResponse(
   res: Response,
   retryAfter: number | undefined
 ): boolean {
+  if (policy.neverRetryStatus.includes(res.status)) return false;
+  if (res.status === 429 || res.status === 503) {
+    if (res.status === 429 && !policy.retryOn429) return false;
+    return gatewaySaysBusyRetry(res, retryAfter);
+  }
   if (!shouldRetryStatus(policy, res.status)) return false;
-  if (res.status === 429) return retryAfter !== undefined;
   return true;
 }
 
@@ -115,10 +133,21 @@ function delayFor(
   res: Response | null,
   retryAfter: number | undefined
 ): number {
-  if (res !== null && res.status === 429 && !policy.ignoreRetryAfter && retryAfter !== undefined) {
-    return Math.min(policy.backoffMaxSeconds, retryAfter);
+  const jitter = (seconds: number): number => {
+    const frac = policy.jitterFraction ?? 0.2;
+    const capped = Math.min(policy.backoffMaxSeconds, seconds);
+    if (frac <= 0) return capped;
+    return Math.min(policy.backoffMaxSeconds, capped * (1 + Math.random() * frac));
+  };
+  if (
+    res !== null &&
+    (res.status === 429 || res.status === 503) &&
+    !policy.ignoreRetryAfter &&
+    retryAfter !== undefined
+  ) {
+    return jitter(retryAfter);
   }
-  return Math.min(policy.backoffMaxSeconds, policy.backoffBaseSeconds * 2 ** attempt);
+  return jitter(policy.backoffBaseSeconds * 2 ** attempt);
 }
 
 /** A thrown error from `fetch` that represents a connection-level failure. */
@@ -165,7 +194,10 @@ export async function executeWithRetry(
     }
     // Read the retry time from a CLONE: the caller still has to read this body,
     // and a Response body can only be consumed once.
-    const retryAfter = res.status === 429 ? gatewayRetryAfter(res, await peekJson(res)) : undefined;
+    const retryAfter =
+      res.status === 429 || res.status === 503
+        ? gatewayRetryAfter(res, await peekJson(res))
+        : undefined;
     if (attempt < policy.maxRetries && shouldRetryResponse(policy, res, retryAfter)) {
       await sleep(delayFor(policy, attempt, res, retryAfter));
       attempt += 1;

@@ -3,10 +3,10 @@
  * `contract_version=` (trustgate-python `src/trustgate/context.py`,
  * `DEFAULT_CONTRACT_VERSION = "2026-09-01"`).
  *
- * The gateway resolves an ABSENT `trustgate-version` header to its legacy
+ * The gateway resolves an ABSENT `shashu-version` header to its legacy
  * contract (trustgate-ai `core/app/contract/version.py`): a block is a 200
  * with refusal prose in `message.content`, no envelope in the body, and the
- * `trustgate-block-encoding` header `shashuFetch` sends is read and
+ * `shashu-block-encoding` header `shashuFetch` sends is read and
  * discarded. The stub below answers the way the gateway does for the version
  * it was told, so every test here sends the same request to the same stub and
  * only the header differs.
@@ -103,16 +103,16 @@ function gatewayAnswer(scenario: Scenario, versioned: boolean): Response {
   switch (scenario) {
     case 'block':
       return versioned
-        ? json(400, SECURITY_BLOCK_400_JAILBREAK, { 'x-trustgate-decision': 'block' })
-        : json(200, SECURITY_BLOCK_200, { 'x-trustgate-decision': 'block' });
+        ? json(400, SECURITY_BLOCK_400_JAILBREAK, { 'x-shashu-decision': 'block' })
+        : json(200, SECURITY_BLOCK_200, { 'x-shashu-decision': 'block' });
     case 'monitor_save':
     case 'block_save': {
       const state = scenario === 'monitor_save' ? 'flagged' : 'blocked';
-      const hdrs = { 'x-trustgate-decision': 'allow', 'x-trustgate-memory': memoryHeader(state) };
+      const hdrs = { 'x-shashu-decision': 'allow', 'x-shashu-memory': memoryHeader(state) };
       return versioned
         ? json(
             200,
-            { ...CHAT_200, trustgate: envelope('allow', { memory: memoryBlock(state) }) },
+            { ...CHAT_200, shashu: envelope('allow', { memory: memoryBlock(state) }) },
             hdrs
           )
         : json(200, CHAT_200, hdrs);
@@ -125,7 +125,7 @@ function gatewayAnswer(scenario: Scenario, versioned: boolean): Response {
               type: 'permission_error',
               param: null,
               code: 'tool_policy',
-              trustgate: envelope('refuse', { memory: memoryBlock('blocked') }, 'tool_policy'),
+              shashu: envelope('refuse', { memory: memoryBlock('blocked') }, 'tool_policy'),
             },
             choices: [],
           })
@@ -184,7 +184,7 @@ afterEach(() => {
 describe("(a) the header is sent by default, with Python's value", () => {
   it('names the same version and header as the Python SDK', () => {
     expect(DEFAULT_CONTRACT_VERSION).toBe('2026-09-01');
-    expect(CONTRACT_VERSION_HEADER).toBe('trustgate-version');
+    expect(CONTRACT_VERSION_HEADER).toBe('shashu-version');
   });
 
   it('Shashu.fetch sends it', async () => {
@@ -207,7 +207,7 @@ describe("(a) the header is sent by default, with Python's value", () => {
       body: '{}',
     });
     expect(seen[0][CONTRACT_VERSION_HEADER]).toBe('2026-09-01');
-    expect(seen[0]['trustgate-block-encoding']).toBe('explicit');
+    expect(seen[0]['shashu-block-encoding']).toBe('explicit');
   });
 
   it('every middleware config carries it', () => {
@@ -225,7 +225,7 @@ describe("(a) the header is sent by default, with Python's value", () => {
 
   it("a caller's own header wins, in any case, and is sent once", async () => {
     const seen = stubGateway('monitor_save');
-    await post(client({ headers: { 'TrustGate-Version': '2026-10-01' } }));
+    await post(client({ headers: { 'Shashu-Version': '2026-10-01' } }));
     expect(seen[0][CONTRACT_VERSION_HEADER]).toBe('2026-10-01');
   });
 });

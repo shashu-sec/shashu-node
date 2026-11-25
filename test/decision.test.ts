@@ -61,16 +61,16 @@ function envelope(decision: string, code?: string, extra: Record<string, unknown
 function headers(decision: string, code?: string, extra: Record<string, string> = {}) {
   const out: Record<string, string> = {
     'x-request-id': 'b510c203bcc970b9f9965ebb86b4348b',
-    'x-trustgate-decision': decision,
-    'x-trustgate-inspection': 'input=checked;output=checked',
+    'x-shashu-decision': decision,
+    'x-shashu-inspection': 'input=checked;output=checked',
     'x-should-retry': 'false',
   };
-  if (code !== undefined) out['x-trustgate-code'] = code;
+  if (code !== undefined) out['x-shashu-code'] = code;
   return { ...out, ...extra };
 }
 
 function successBody(decision: string, code?: string, extra: Record<string, unknown> = {}) {
-  return { ...CHAT_200, trustgate: envelope(decision, code, extra) };
+  return { ...CHAT_200, shashu: envelope(decision, code, extra) };
 }
 
 function errorBody(decision: string, code: string, message: string, etype: string) {
@@ -80,7 +80,7 @@ function errorBody(decision: string, code: string, message: string, etype: strin
       type: etype,
       param: null,
       code,
-      trustgate: envelope(decision, code),
+      shashu: envelope(decision, code),
     },
     choices: [],
   };
@@ -144,7 +144,7 @@ describe('the names come from the vendored contract', () => {
   });
 
   it("the body key is the contract's body key", () => {
-    expect(BODY_KEY).toBe('trustgate');
+    expect(BODY_KEY).toBe('shashu');
     expect(text).toContain(`\`${BODY_KEY}\``);
   });
 
@@ -167,7 +167,7 @@ describe("absence is today's behaviour", () => {
   it('a response with no envelope and no headers is unchanged', async () => {
     const res = await ok(CHAT_200);
     const body = await res.json();
-    expect(body.trustgate).toBeUndefined();
+    expect(body.shashu).toBeUndefined();
     expect(shashuDecision(res)).toBeUndefined();
     expect(shashuDecision(body)).toBeUndefined();
     expect(body.choices[0].message.content).toBe('ok');
@@ -252,8 +252,8 @@ describe('all six values from the body', () => {
 
   it('fail', async () => {
     const body = errorBody(DECISION_FAIL, 'inspector_timeout', 'nobody decided', 'api_error');
-    (body.error.trustgate as Record<string, unknown>).retryable = true;
-    (body.error.trustgate as Record<string, unknown>).retry_after_ms = 15000;
+    (body.error.shashu as Record<string, unknown>).retryable = true;
+    (body.error.shashu as Record<string, unknown>).retry_after_ms = 15000;
     const err = await raised(503, body);
     const d = shashuDecision(err);
     expect(d?.decision).toBe(DECISION_FAIL);
@@ -348,7 +348,7 @@ describe('fail closed on the decision value', () => {
   });
 
   it('a non-object envelope is ignored not crashed on', async () => {
-    const res = await ok({ ...CHAT_200, trustgate: 'not an object' });
+    const res = await ok({ ...CHAT_200, shashu: 'not an object' });
     expect(shashuDecision(res)).toBeUndefined();
     expect(shashuDecision(await res.clone().json())).toBeUndefined();
   });

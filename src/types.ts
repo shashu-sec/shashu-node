@@ -3,7 +3,7 @@ import type { Decision, RoutePolicy } from './decision.js';
 
 /**
  * Runtime metadata included in every context for parity with the Python SDK.
- * Sent in x-trustgate-source-tool and in x-trustgate-meta-* headers.
+ * Sent in x-shashu-source-tool and in x-shashu-meta-* headers.
  */
 export interface RuntimeMetadata {
   /** SDK version (e.g. "1.0.0"). */
@@ -99,7 +99,7 @@ export type Provider = 'openai' | 'anthropic' | 'google';
  */
 export interface ShashuConfig {
   /**
-   * Shashu gateway base URL. Falls back to process.env.TRUSTGATE_BASE_URL.
+   * Shashu gateway base URL. Falls back to process.env.SHASHU_BASE_URL.
    * There is NO default: SHASHU is self-hosted, so an unset address is a
    * ShashuConfigError, never a vendor host. See ./config.ts.
    */
@@ -115,7 +115,7 @@ export interface ShashuConfig {
    * This agent's OWN id (ADR-007 §4.1). NOT sent on the gateway call (that FORWARDS the
    * captured inbound caller); used by `buildInvocationHeaders()` to stamp caller = self when
    * THIS agent invokes a downstream agent. Seeds the self-id cache, which is then refreshed
-   * from each gateway response's `x-trustgate-agent-id` header. Advisory lineage only —
+   * from each gateway response's `x-shashu-agent-id` header. Advisory lineage only —
    * NEVER an auth credential.
    */
   agentId?: string;
@@ -132,12 +132,12 @@ export interface ShashuConfig {
   /** Extra headers sent with every request */
   headers?: Record<string, string>;
   /**
-   * `trustgate-version`: the contract generation to ask the gateway for.
+   * `shashu-version`: the contract generation to ask the gateway for.
    * Default `DEFAULT_CONTRACT_VERSION` (`"2026-09-01"`, the Python SDK's
    * value): refusals arrive as errors and the body carries the full decision.
    * Pass `null` to send no such header — the gateway then serves the account
    * default, which is the legacy contract unless an operator moved it.
-   * A `trustgate-version` entry in `headers` wins over this.
+   * A `shashu-version` entry in `headers` wins over this.
    */
   contractVersion?: string | null;
   /**

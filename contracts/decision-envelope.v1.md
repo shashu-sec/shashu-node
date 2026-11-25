@@ -55,9 +55,9 @@ Three placements exist; a client sees two of them.
 
 | Placement | Key | Present on |
 |---|---|---|
-| 200 body | top-level `trustgate` | every 200 |
-| 4xx/5xx body | `error.trustgate` — nested INSIDE `error`, never beside it | every error |
-| Response headers | `x-trustgate-*`, below | **every** response |
+| 200 body | top-level `shashu` | every 200 |
+| 4xx/5xx body | `error.shashu` — nested INSIDE `error`, never beside it | every error |
+| Response headers | `x-shashu-*`, below | **every** response |
 
 Neither body placement is sufficient alone: two of the four first-party SDKs
 drop unknown body keys entirely. Headers are the only carrier that always
@@ -89,13 +89,13 @@ Source: `Envelope.headers()`.
 | Header | Always present | Value |
 |---|---|---|
 | `x-request-id` | yes | same value as `id` |
-| `x-trustgate-decision` | yes | the decision string |
-| `x-trustgate-inspection` | yes | `input=checked;output=skipped;reason=...;<detector>=<state>` |
+| `x-shashu-decision` | yes | the decision string |
+| `x-shashu-inspection` | yes | `input=checked;output=skipped;reason=...;<detector>=<state>` |
 | `x-should-retry` | yes | `"true"` / `"false"` |
-| `x-trustgate-code` | only when a `code` is set | the code string |
+| `x-shashu-code` | only when a `code` is set | the code string |
 | `Retry-After` | only when retryable with a time | **seconds** |
-| `x-trustgate-attachments` | only when a file count is above zero | `total=N;scanned=N;not_inspected=N;blocked=N` |
-| `x-trustgate-memory` | only when a memory count is above zero | `writes=N;blocked=N;recalls=N;flagged=N` |
+| `x-shashu-attachments` | only when a file count is above zero | `total=N;scanned=N;not_inspected=N;blocked=N` |
+| `x-shashu-memory` | only when a memory count is above zero | `writes=N;blocked=N;recalls=N;flagged=N` |
 | `Access-Control-Expose-Headers` | yes | the sorted list of the above |
 
 ## `inspection`

@@ -5,7 +5,7 @@ regulated industries. There is no default gateway hostname — you point the
 client at your own address, and it raises a configuration error rather than
 guessing. After the first mention, this document says **SHASHU**.
 
-Wire names `x-trustgate-*`, `trustgate_metadata`, and the `tg_sk_` key prefix
+Wire names `x-shashu-*`, `shashu_metadata`, and the `tg_sk_` key prefix
 are protocol names and are unchanged.
 
 Requires Node.js 18 or later.
@@ -101,19 +101,19 @@ is on your network, under your name, and the SDK will not guess a host for you.
 Every entry point resolves the address the same way:
 
 1. the explicit `baseUrl` option, then
-2. the `TRUSTGATE_BASE_URL` environment variable, then
+2. the `SHASHU_BASE_URL` environment variable, then
 3. a `ShashuConfigError`.
 
 ```ts
 import { Shashu, ShashuConfigError } from '@shashu-ai/sdk';
 
 try {
-  const client = new Shashu({ apiKey: process.env.TRUSTGATE_API_KEY });
+  const client = new Shashu({ apiKey: process.env.SHASHU_API_KEY });
 } catch (e) {
   if (e instanceof ShashuConfigError) {
     // "SHASHU gateway address is not configured, so new Shashu() has
     //  nothing to route to. Pass baseUrl to new Shashu(), or set the
-    //  TRUSTGATE_BASE_URL environment variable. ..."
+    //  SHASHU_BASE_URL environment variable. ..."
   }
 }
 ```
@@ -124,14 +124,14 @@ rule 3: it is constructed when the module is imported, so an unset address
 leaves it with no gateway and it simply sends no span telemetry rather than
 breaking `import`.
 
-### Turning the SDK off: `TRUSTGATE_DISABLE`
+### Turning the SDK off: `SHASHU_DISABLE`
 
-Set `TRUSTGATE_DISABLE=1` to make the SDK a no-op without a code change, so a
+Set `SHASHU_DISABLE=1` to make the SDK a no-op without a code change, so a
 platform team can stop a deployed service's instrumentation from its
 environment. `1`, `true`, `yes` and `on` are all accepted (any case).
 
 ```bash
-TRUSTGATE_DISABLE=1 node ./my-service.js
+SHASHU_DISABLE=1 node ./my-service.js
 ```
 
 When it is set:
@@ -177,10 +177,10 @@ Six values, and the split that matters is whether you got the model's content:
 gateway did not send a decision — that is not `allow`. `isShashuBlock()`
 inspects; it patches nothing. An unrecognised decision fails closed (`true`).
 
-**This SDK sends `trustgate-version: 2026-09-01` by default** (since 4.0.0), the
+**This SDK sends `shashu-version: 2026-09-01` by default** (since 4.0.0), the
 same value as the Trustgate AI Python SDK. The `Shashu` client,
 `shashuFetch()` and the middleware configs all send it. With it, the body of
-every reply carries the full `trustgate` block, so `decision.memory.items` lists
+every reply carries the full `shashu` block, so `decision.memory.items` lists
 each memory save and recall and you get the inspection detail, not just header
 counts. A refusal arrives as an error instead of a 200 reply: a content block is
 an HTTP **400** (`ShashuContentFilterError`), a policy refusal a **403**
@@ -220,8 +220,8 @@ import { createShashuOpenAIOptions } from '@shashu-ai/sdk/middleware/vercel-ai';
 
 const openai = createOpenAI(
   createShashuOpenAIOptions({
-    baseUrl: process.env.TRUSTGATE_BASE_URL!,
-    apiKey: process.env.TRUSTGATE_API_KEY,
+    baseUrl: process.env.SHASHU_BASE_URL!,
+    apiKey: process.env.SHASHU_API_KEY,
   })
 );
 
@@ -242,8 +242,8 @@ import { ChatOpenAI } from '@langchain/openai';
 import { createShashuLangChainConfig } from '@shashu-ai/sdk/middleware/langchain';
 
 const config = createShashuLangChainConfig({
-  baseUrl: process.env.TRUSTGATE_BASE_URL!,
-  apiKey: process.env.TRUSTGATE_API_KEY,
+  baseUrl: process.env.SHASHU_BASE_URL!,
+  apiKey: process.env.SHASHU_API_KEY,
 });
 
 const llm = new ChatOpenAI({
@@ -259,7 +259,7 @@ retrieval to the outgoing body — see [Declaring retrieval](#declaring-retrieva
 ## Declaring retrieval (RAG)
 
 The gateway scans retrieved documents on a dedicated `ingress-rag` surface when
-the request body carries `trustgate_metadata.rag_context` — with the corpus, the
+the request body carries `shashu_metadata.rag_context` — with the corpus, the
 per-document previews and the scores, rather than as an undifferentiated wall of
 user text. Declare what you retrieved **where you retrieved it**; the SDK carries
 the declaration to the gateway on the next model call.
@@ -280,7 +280,7 @@ await openai.chat.completions.create({ model: 'gpt-4o-mini', messages });
 `metadata`), LangChain `Document`s or LlamaIndex nodes. The payload is capped at
 the contract's limits: 64 documents, 2048-character previews, 8 declarations,
 newest kept. An explicit `attachRagContext()` on the body always wins, and
-`TRUSTGATE_DISABLE=1` makes the whole path inert.
+`SHASHU_DISABLE=1` makes the whole path inert.
 
 ### Where the declaration reaches
 
@@ -370,11 +370,11 @@ Get a pre-formatted JSON object of headers for n8n “HTTP Request” nodes so e
 import { getN8nHeaderSnippet } from '@shashu-ai/sdk';
 
 const { headers, json } = getN8nHeaderSnippet();
-// headers: [ { name: 'X-Trustgate-Source', value: 'n8n' }, ... ]
-// json: '{"X-Trustgate-Source":"n8n","X-Trustgate-Workflow-Id":"...", ...}'
+// headers: [ { name: 'X-Shashu-Source', value: 'n8n' }, ... ]
+// json: '{"X-Shashu-Source":"n8n","X-Shashu-Workflow-Id":"...", ...}'
 ```
 
-In n8n, set **Send Headers** (or equivalent) to the `headers` array or paste the `json` into your node config. You can pass `apiKey` and `baseUrl` explicitly or rely on `TRUSTGATE_API_KEY` and `TRUSTGATE_BASE_URL` in the environment.
+In n8n, set **Send Headers** (or equivalent) to the `headers` array or paste the `json` into your node config. You can pass `apiKey` and `baseUrl` explicitly or rely on `SHASHU_API_KEY` and `SHASHU_BASE_URL` in the environment.
 
 ## Streaming (SSE)
 

@@ -4,18 +4,18 @@ import { SDK_VERSION } from './version.js';
 import { tracer } from './tracer.js';
 
 /** Lowercase header prefix for proxy/gateway parity with Python SDK. */
-export const HEADER_PREFIX = 'x-trustgate';
+export const HEADER_PREFIX = 'x-shashu';
 /** Header carrying the full context JSON (structurally identical to Python SDK). */
-export const SOURCE_TOOL_HEADER = 'x-trustgate-source-tool';
+export const SOURCE_TOOL_HEADER = 'x-shashu-source-tool';
 
 /**
  * The contract generation this SDK speaks, declared on every request — the
  * same value the Python SDK sends (`trustgate.context.DEFAULT_CONTRACT_VERSION`).
  *
- * The gateway resolves an ABSENT `trustgate-version` header to its legacy
+ * The gateway resolves an ABSENT `shashu-version` header to its legacy
  * contract: a refusal is a 200 with prose in `message.content`, the body
  * carries no envelope (so memory and file items reach a caller as header
- * counts only), and the `trustgate-block-encoding` header `shashuFetch`
+ * counts only), and the `shashu-block-encoding` header `shashuFetch`
  * sends is read and discarded.
  *
  * A documented default, not a hardcode: pass `contractVersion` to pin another,
@@ -25,7 +25,7 @@ export const SOURCE_TOOL_HEADER = 'x-trustgate-source-tool';
 export const DEFAULT_CONTRACT_VERSION = '2026-09-01';
 
 /** The header {@link DEFAULT_CONTRACT_VERSION} is sent under. Lowercase. */
-export const CONTRACT_VERSION_HEADER = 'trustgate-version';
+export const CONTRACT_VERSION_HEADER = 'shashu-version';
 
 /**
  * Add the contract version to an outgoing header set, unless the caller
@@ -134,7 +134,7 @@ export function getWorkflowContextFromEnv(): WorkflowContext {
 }
 
 /**
- * JSON payload for x-trustgate-source-tool header (structurally identical to Python SDK).
+ * JSON payload for x-shashu-source-tool header (structurally identical to Python SDK).
  */
 export function buildSourceToolJson(ctx: WorkflowContext): string {
   const meta = ctx.metadata ?? getBaseMetadata();
@@ -167,8 +167,8 @@ function resolveOriginTraceId(): string {
 }
 
 /**
- * Builds Shashu context headers: x-trustgate-workflow-step, x-trustgate-source, etc.,
- * plus x-trustlog-* for metadata (e.g. x-trustlog-node-version). Also x-trustgate-source-tool JSON.
+ * Builds Shashu context headers: x-shashu-workflow-step, x-shashu-source, etc.,
+ * plus x-trustlog-* for metadata (e.g. x-trustlog-node-version). Also x-shashu-source-tool JSON.
  */
 /**
  * Lowercase every header key. Python parity (`{k.lower(): v ...}` in
@@ -204,31 +204,31 @@ export function buildContextHeaders(
 
   // --- TRACING INJECTION ---
   if (tracer.isActive) {
-    if (tracer.traceId) h['x-trustgate-trace-id'] = tracer.traceId;
+    if (tracer.traceId) h['x-shashu-trace-id'] = tracer.traceId;
     // Python parity: span-id is the CURRENT span, parent-id its REAL parent ("" for a root).
-    h['x-trustgate-span-id'] = tracer.currentSpanId ?? '';
-    h['x-trustgate-parent-id'] = tracer.parentSpanId ?? '';
+    h['x-shashu-span-id'] = tracer.currentSpanId ?? '';
+    h['x-shashu-parent-id'] = tracer.parentSpanId ?? '';
   } else if (tracer.isA2aHop) {
     // Mid-flow without a span: PROPAGATE the captured trace (do NOT mint a new one).
-    if (tracer.traceId) h['x-trustgate-trace-id'] = tracer.traceId;
-  } else if (!h['x-trustgate-trace-id']) {
+    if (tracer.traceId) h['x-shashu-trace-id'] = tracer.traceId;
+  } else if (!h['x-shashu-trace-id']) {
     // Origin: ALWAYS emit a trace id (Python _get_trace_id() parity).
-    h['x-trustgate-trace-id'] = resolveOriginTraceId();
+    h['x-shashu-trace-id'] = resolveOriginTraceId();
   }
 
   // Session is resolved in ONE place. A constructed client always passes a
-  // default (minted once), so origin sends x-trustgate-session-id and the
+  // default (minted once), so origin sends x-shashu-session-id and the
   // gateway does not synthesise `derived-` + sha256(agent + first message).
   // A captured A2A session overrides that default; a per-request one wins.
   // caller-agent-id and hop-depth remain A2A-only (ADR-007 §5, as superseded
   // 2026-09-13: origin still emits neither).
   const sessionId = resolveSessionId(session);
-  if (sessionId) h['x-trustgate-session-id'] = sessionId;
+  if (sessionId) h['x-shashu-session-id'] = sessionId;
 
   if (tracer.isA2aHop) {
     const inboundCaller = tracer.inboundCallerAgentId;
-    if (inboundCaller) h['x-trustgate-caller-agent-id'] = inboundCaller;
-    h['x-trustgate-hop-depth'] = String(tracer.outboundHopDepth);
+    if (inboundCaller) h['x-shashu-caller-agent-id'] = inboundCaller;
+    h['x-shashu-hop-depth'] = String(tracer.outboundHopDepth);
   }
 
   return lowercaseHeaderKeys(h);
@@ -310,10 +310,10 @@ export function buildInvocationHeaders(opts: InvocationHeaderOptions): Record<st
   const session = resolveSessionId({ requestSessionId: opts.sessionId });
 
   const h: Record<string, string> = {
-    'x-trustgate-trace-id': String(trace),
-    'x-trustgate-caller-agent-id': String(opts.callerAgentId),
-    'x-trustgate-hop-depth': String(hop),
+    'x-shashu-trace-id': String(trace),
+    'x-shashu-caller-agent-id': String(opts.callerAgentId),
+    'x-shashu-hop-depth': String(hop),
   };
-  if (session) h['x-trustgate-session-id'] = String(session);
+  if (session) h['x-shashu-session-id'] = String(session);
   return lowercaseHeaderKeys(h);
 }

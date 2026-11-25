@@ -10,8 +10,8 @@
  *   import { createShashuAnthropicConfig } from '@shashu-ai/sdk/middleware/anthropic';
  *
  *   const config = createShashuAnthropicConfig({
- *     baseUrl: process.env.TRUSTGATE_BASE_URL!,
- *     apiKey: process.env.TRUSTGATE_API_KEY,
+ *     baseUrl: process.env.SHASHU_BASE_URL!,
+ *     apiKey: process.env.SHASHU_API_KEY,
  *   });
  *
  *   const anthropic = new Anthropic(config);
@@ -53,7 +53,7 @@ export function getAnthropicHeaders(config: ShashuConfig): Record<string, string
  * Returns a config object for the Anthropic SDK (baseURL, apiKey, defaultHeaders).
  * Injects Shashu context headers and x-api-key so requests go through the gateway.
  *
- * Returns `{}` when TRUSTGATE_DISABLE is set: the provider client is then left
+ * Returns `{}` when SHASHU_DISABLE is set: the provider client is then left
  * exactly as it was — its own endpoint, its own credential, no Shashu context
  * headers — which is the same no-op the Python SDK's patchers perform. The
  * caller's tg_sk_ key is deliberately NOT handed back, since it would be sent to

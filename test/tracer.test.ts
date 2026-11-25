@@ -14,11 +14,11 @@ import { tracer, buildContextHeaders, getWorkflowContextFromEnv } from '../src/i
 const ctx = () => getWorkflowContextFromEnv();
 
 describe('origin trace id', () => {
-  it('emits a non-empty x-trustgate-trace-id with no active span (Python parity)', () => {
+  it('emits a non-empty x-shashu-trace-id with no active span (Python parity)', () => {
     const h = buildContextHeaders(ctx());
-    expect(h['x-trustgate-trace-id']).toBeTruthy();
-    expect(typeof h['x-trustgate-trace-id']).toBe('string');
-    expect(h['x-trustgate-trace-id'].length).toBeGreaterThan(0);
+    expect(h['x-shashu-trace-id']).toBeTruthy();
+    expect(typeof h['x-shashu-trace-id']).toBe('string');
+    expect(h['x-shashu-trace-id'].length).toBeGreaterThan(0);
   });
 });
 
@@ -26,9 +26,9 @@ describe('span header injection', () => {
   it('root span: span-id is the root span, parent-id is empty, and they differ', async () => {
     await tracer.span('root', async (rootSpanId) => {
       const h = buildContextHeaders(ctx());
-      expect(h['x-trustgate-span-id']).toBe(rootSpanId);
-      expect(h['x-trustgate-parent-id']).toBe('');
-      expect(h['x-trustgate-parent-id']).not.toBe(h['x-trustgate-span-id']);
+      expect(h['x-shashu-span-id']).toBe(rootSpanId);
+      expect(h['x-shashu-parent-id']).toBe('');
+      expect(h['x-shashu-parent-id']).not.toBe(h['x-shashu-span-id']);
     });
   });
 
@@ -36,9 +36,9 @@ describe('span header injection', () => {
     await tracer.span('outer', async (outerSpanId) => {
       await tracer.span('inner', async (innerSpanId) => {
         const h = buildContextHeaders(ctx());
-        expect(h['x-trustgate-span-id']).toBe(innerSpanId);
-        expect(h['x-trustgate-parent-id']).toBe(outerSpanId);
-        expect(h['x-trustgate-parent-id']).not.toBe(h['x-trustgate-span-id']);
+        expect(h['x-shashu-span-id']).toBe(innerSpanId);
+        expect(h['x-shashu-parent-id']).toBe(outerSpanId);
+        expect(h['x-shashu-parent-id']).not.toBe(h['x-shashu-span-id']);
       });
     });
   });

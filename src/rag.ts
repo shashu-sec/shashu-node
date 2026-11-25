@@ -2,13 +2,13 @@
  * Helpers for attaching structured RAG context to a chat-completion request body.
  *
  * The Shashu gateway scans retrieved documents on a dedicated `ingress-rag`
- * surface when the request body carries `trustgate_metadata.rag_context`.
+ * surface when the request body carries `shashu_metadata.rag_context`.
  * This is materially better than letting retrieved documents be scanned as
  * plain user text — the rag scanner has access to corpus + per-doc scores +
  * per-doc previews, which dramatically reduces false-positives on legitimate
  * RAG flows.
  *
- * The gateway pops `trustgate_metadata` from the body before forwarding to
+ * The gateway pops `shashu_metadata` from the body before forwarding to
  * the LLM provider, so the upstream model never sees the control plane.
  *
  * @example
@@ -63,8 +63,8 @@ export function makeRagContext(input: RagContext): RagContext {
 }
 
 /**
- * Merge a rag_context dict into `body.trustgate_metadata.rag_context`
- * without clobbering other trustgate_metadata fields the caller may have set.
+ * Merge a rag_context dict into `body.shashu_metadata.rag_context`
+ * without clobbering other shashu_metadata fields the caller may have set.
  *
  * Returns the same body object (mutated) for chaining convenience.
  */
@@ -78,11 +78,11 @@ export function attachRagContext<T extends Record<string, unknown>>(
   if (ragContext === null || typeof ragContext !== 'object') {
     throw new TypeError('ragContext must be an object');
   }
-  const existing = body.trustgate_metadata;
+  const existing = body.shashu_metadata;
   const meta: Record<string, unknown> =
     existing !== null && typeof existing === 'object' ? (existing as Record<string, unknown>) : {};
   meta.rag_context = ragContext;
-  (body as Record<string, unknown>).trustgate_metadata = meta;
+  (body as Record<string, unknown>).shashu_metadata = meta;
   return body;
 }
 
@@ -381,7 +381,7 @@ export interface DeclareRetrievalOptions {
  * can be seen -- the alternative is a payload the gateway rejects at the far end
  * of a customer's stack.
  *
- * A no-op when `TRUSTGATE_DISABLE=1`.
+ * A no-op when `SHASHU_DISABLE=1`.
  */
 export function declareRetrieval(docs: unknown, options: DeclareRetrievalOptions): void {
   if (isDisabled()) return;
@@ -413,7 +413,7 @@ export function declareRetrieval(docs: unknown, options: DeclareRetrievalOptions
  * leak into the frame that started the task, where `enterWith` does. See
  * `_bus.ts` for the measured table.
  *
- * A no-op wrapper when `TRUSTGATE_DISABLE=1`: `fn` still runs, nothing is
+ * A no-op wrapper when `SHASHU_DISABLE=1`: `fn` still runs, nothing is
  * declared.
  */
 export async function retrievalScope<T>(

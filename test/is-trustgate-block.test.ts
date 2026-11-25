@@ -35,7 +35,7 @@ function errorBody(decision: string, code: string, etype: string) {
       type: etype,
       param: null,
       code,
-      trustgate: envelope(decision, code),
+      shashu: envelope(decision, code),
     },
     choices: [],
   };
@@ -77,7 +77,7 @@ describe('true: it is our block', () => {
     const err = await raised(
       400,
       { error: { message: 'blocked', type: 'content_filter', code: 'jailbreak' } },
-      { 'x-trustgate-decision': 'block', 'x-trustgate-code': 'jailbreak' }
+      { 'x-shashu-decision': 'block', 'x-shashu-code': 'jailbreak' }
     );
     expect(isShashuBlock(err)).toBe(true);
   });
@@ -148,7 +148,7 @@ describe('false: it is not our block', () => {
     stub(200, {
       id: 'chatcmpl-mock',
       choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
-      trustgate: envelope('allow_altered', 'dlp'),
+      shashu: envelope('allow_altered', 'dlp'),
     });
     const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'k', retryPolicy: null });
     const res = await tg.fetch(CHAT, { method: 'POST', body: BODY });

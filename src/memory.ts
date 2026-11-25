@@ -105,9 +105,9 @@ export function attachMemoryContext<T extends Record<string, unknown>>(
   memoryContext: Record<string, unknown>
 ): T {
   const bag: Record<string, unknown> = body;
-  const existing = bag.trustgate_metadata;
+  const existing = bag.shashu_metadata;
   const metadata =
     existing !== null && typeof existing === 'object' ? (existing as Record<string, unknown>) : {};
-  bag.trustgate_metadata = { ...metadata, memory_context: memoryContext };
+  bag.shashu_metadata = { ...metadata, memory_context: memoryContext };
   return body;
 }

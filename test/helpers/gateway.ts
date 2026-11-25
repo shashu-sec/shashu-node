@@ -44,9 +44,9 @@ export interface MockGateway {
   /** Hand this to a provider SDK's `fetch` option, or to `globalThis.fetch`. */
   fetch: (input: any, init?: any) => Promise<Response>;
   requests: CapturedRequest[];
-  /** `trustgate_metadata.rag_context` off request `index`, or undefined. */
+  /** `shashu_metadata.rag_context` off request `index`, or undefined. */
   ragContext(index?: number): Record<string, unknown> | undefined;
-  /** True when the request carried no `trustgate_metadata` at all. */
+  /** True when the request carried no `shashu_metadata` at all. */
   bare(index?: number): boolean;
 }
 
@@ -121,12 +121,12 @@ export function mockGateway(): MockGateway {
     fetch: fetchImpl,
     requests,
     ragContext(index = 0) {
-      const metadata = requests[index]?.body?.trustgate_metadata as
+      const metadata = requests[index]?.body?.shashu_metadata as
         Record<string, unknown> | undefined;
       return metadata?.rag_context as Record<string, unknown> | undefined;
     },
     bare(index = 0) {
-      return requests[index]?.body?.trustgate_metadata === undefined;
+      return requests[index]?.body?.shashu_metadata === undefined;
     },
   };
 }

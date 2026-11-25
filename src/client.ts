@@ -61,10 +61,10 @@ function resolveContext(config: ShashuConfig, options?: RequestOptions): Workflo
 }
 
 /**
- * The gateway this client talks to: `baseUrl` option, then TRUSTGATE_BASE_URL,
+ * The gateway this client talks to: `baseUrl` option, then SHASHU_BASE_URL,
  * then a ShashuConfigError.
  *
- * Not gated by TRUSTGATE_DISABLE, matching the Python client. The kill switch
+ * Not gated by SHASHU_DISABLE, matching the Python client. The kill switch
  * turns off INSTRUMENTATION — the middlewares and the tracer — by leaving the
  * third-party client talking to its own provider. This client has no other
  * destination to fall back to, so there is nothing for it to no-op into; an
@@ -112,7 +112,7 @@ export class Shashu {
 
   /**
    * This agent's OWN id (ADR-007 §4.1). Seeded by the `agentId` option and refreshed from
-   * each gateway response's `x-trustgate-agent-id` header (read on EVERY response, incl.
+   * each gateway response's `x-shashu-agent-id` header (read on EVERY response, incl.
    * 4xx). Used by {@link buildInvocationHeaders} to stamp caller = self when invoking a
    * downstream agent — never sent as the gateway call's caller. Advisory lineage, never auth.
    */
@@ -156,14 +156,14 @@ export class Shashu {
   }
 
   /**
-   * Cache this agent's own id from the gateway's `x-trustgate-agent-id` response header
+   * Cache this agent's own id from the gateway's `x-shashu-agent-id` response header
    * (delivered by WP-A2A-1). Used by {@link buildInvocationHeaders} to stamp caller = self
    * on a downstream invocation. Read on EVERY response — including non-2xx — so even a
    * blocked response seeds the self-id. NEVER an auth credential. Fail-soft: never throws.
    */
   private captureAgentId(res: Response): void {
     try {
-      const aid = res.headers.get('x-trustgate-agent-id');
+      const aid = res.headers.get('x-shashu-agent-id');
       if (aid) this._agentId = aid;
     } catch {
       // ignore
@@ -176,7 +176,7 @@ export class Shashu {
    * refreshed from gateway responses); trace / hop / session default from the tracer so the
    * served flow is propagated. The downstream agent calls `captureIncoming()` on these
    * headers. Throws if self-id is not known yet — set the `agentId` option or make one
-   * gateway call first so the `x-trustgate-agent-id` response header can seed it.
+   * gateway call first so the `x-shashu-agent-id` response header can seed it.
    */
   buildInvocationHeaders(opts?: {
     traceId?: string;
@@ -186,7 +186,7 @@ export class Shashu {
     if (!this._agentId) {
       throw new Error(
         'self agent id is unknown — set the agentId option or make one gateway call first ' +
-          'so the x-trustgate-agent-id response header can seed it.'
+          'so the x-shashu-agent-id response header can seed it.'
       );
     }
     return buildInvocationHeaders({ callerAgentId: this._agentId, ...opts });

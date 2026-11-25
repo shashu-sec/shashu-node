@@ -19,7 +19,7 @@
  *    on the wire are the bytes the unwrapped client produced -- asserted by
  *    reference identity in `test/joiner.test.ts`.
  * 2. **Explicit always wins.** A body already carrying
- *    `trustgate_metadata.rag_context` is left exactly as the caller built it.
+ *    `shashu_metadata.rag_context` is left exactly as the caller built it.
  *    The ambient declaration is consumed and discarded, not deferred: a
  *    declaration that lost this call must not turn up on the next one.
  * 3. **Snapshot and clear.** The bus is emptied the moment it is written to a
@@ -65,7 +65,7 @@ function parseJsonObject(body: unknown): Record<string, unknown> | undefined {
 
 /** True when the caller built the `rag_context` themselves. */
 function metadataBag(body: Record<string, unknown>): Record<string, unknown> | undefined {
-  const metadata = body.trustgate_metadata;
+  const metadata = body.shashu_metadata;
   if (metadata !== null && typeof metadata === 'object') {
     return metadata as Record<string, unknown>;
   }

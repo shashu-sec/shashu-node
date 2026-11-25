@@ -56,19 +56,19 @@ export const DELIVERED_DECISIONS: ReadonlySet<string> = new Set([
 ]);
 
 /** Top-level on a 200 body; nested INSIDE `error` on an error body. */
-export const BODY_KEY = 'trustgate';
+export const BODY_KEY = 'shashu';
 
-export const HEADER_DECISION = 'x-trustgate-decision';
-export const HEADER_CODE = 'x-trustgate-code';
-export const HEADER_INSPECTION = 'x-trustgate-inspection';
+export const HEADER_DECISION = 'x-shashu-decision';
+export const HEADER_CODE = 'x-shashu-code';
+export const HEADER_INSPECTION = 'x-shashu-inspection';
 export const HEADER_SHOULD_RETRY = 'x-should-retry';
 export const HEADER_REQUEST_ID = 'x-request-id';
-export const HEADER_SHASHU_REQUEST_ID = 'x-trustgate-request-id';
-export const HEADER_TRACE_ID = 'x-trustgate-trace-id';
+export const HEADER_SHASHU_REQUEST_ID = 'x-shashu-request-id';
+export const HEADER_TRACE_ID = 'x-shashu-trace-id';
 /** Counts only (`total=N;scanned=N;not_inspected=N;blocked=N`), only when one is above zero. */
-export const HEADER_ATTACHMENTS = 'x-trustgate-attachments';
+export const HEADER_ATTACHMENTS = 'x-shashu-attachments';
 /** Counts only (`writes=N;blocked=N;recalls=N;flagged=N`), only when one is above zero. */
-export const HEADER_MEMORY = 'x-trustgate-memory';
+export const HEADER_MEMORY = 'x-shashu-memory';
 
 /**
  * What happened to one attached file. A closed set on the gateway; a value
@@ -173,7 +173,7 @@ export interface Decision {
   readonly retryable: boolean;
   /** Resolves to the stored audit record. Same value as `x-request-id`. */
   readonly id: string | undefined;
-  /** The per-hop request id (`x-trustgate-request-id`), or undefined. */
+  /** The per-hop request id (`x-shashu-request-id`), or undefined. */
   readonly requestId: string | undefined;
   /** The flow's trace id — the same value as `id`, under its own name. */
   readonly traceId: string | undefined;
@@ -190,7 +190,7 @@ export interface Decision {
   readonly carrierDisagreement: Record<string, [unknown, unknown]>;
   /**
    * What happened to each attached file; undefined when the request had none.
-   * Read off the body; off the `x-trustgate-attachments` counts when the body
+   * Read off the body; off the `x-shashu-attachments` counts when the body
    * carried no envelope. `attachments.carrier` says which.
    */
   readonly attachments: Attachments | undefined;

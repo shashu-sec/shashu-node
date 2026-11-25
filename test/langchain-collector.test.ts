@@ -96,11 +96,11 @@ describe('collector lifecycle', () => {
     expect(isInstalled()).toBe(false);
   });
 
-  it('reports itself off while TRUSTGATE_DISABLE is set', async () => {
+  it('reports itself off while SHASHU_DISABLE is set', async () => {
     await install({ corpus: 'c' });
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     expect(isInstalled()).toBe(false);
-    delete process.env.TRUSTGATE_DISABLE;
+    delete process.env.SHASHU_DISABLE;
     expect(isInstalled()).toBe(true);
   });
 

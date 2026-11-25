@@ -29,7 +29,7 @@ import type { RequestOptions } from './types.js';
 export interface AuditConversation {
   messages?: Record<string, unknown>[];
   response?: string;
-  trustgate_metadata?: Record<string, unknown>;
+  shashu_metadata?: Record<string, unknown>;
   /** Free-form passthrough preserved alongside the canonical conversation. */
   extra?: Record<string, unknown>;
 }
@@ -46,7 +46,7 @@ export interface AuditEventInput {
   userContext?: Record<string, unknown>;
   /**
    * Distributed trace ID linking related connector events. If absent, the
-   * gateway falls back to the x-trustgate-trace-id header (auto-detected
+   * gateway falls back to the x-shashu-trace-id header (auto-detected
    * from env or tracer context); without either, the AuditLog row will only
    * have transaction_id.
    */

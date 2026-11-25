@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://trustgateai.io/contracts/memory_context.v1.schema.json",
   "title": "TrustGate memory_context v1",
-  "description": "The memory declaration carried at trustgate_metadata.memory_context. It declares ONLY the memory items actually bound into the prompt sent to the model. Collectors that observe writes without a model call are out of scope for this schema.",
+  "description": "The memory declaration carried at shashu_metadata.memory_context. It declares ONLY the memory items actually bound into the prompt sent to the model. Collectors that observe writes without a model call are out of scope for this schema.",
   "type": "object",
   "additionalProperties": false,
   "required": ["store", "items"],

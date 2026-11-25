@@ -11,8 +11,8 @@
  *   import { createShashuOpenAI } from '@shashu-ai/sdk/middleware/vercel-ai';
  *
  *   const openai = createShashuOpenAI({
- *     baseUrl: process.env.TRUSTGATE_BASE_URL!,
- *     apiKey: process.env.TRUSTGATE_API_KEY,
+ *     baseUrl: process.env.SHASHU_BASE_URL!,
+ *     apiKey: process.env.SHASHU_API_KEY,
  *   });
  *
  *   // Then use `openai` with streamText() as usual — requests go through Shashu.
@@ -43,7 +43,7 @@ export interface ShashuOpenAIOptions extends ShashuConfig {
 
 /**
  * Returns extra headers (lowercase keys) to pass to the Vercel AI SDK OpenAI provider
- * so that requests sent to Shashu include workflow context and x-trustgate-source-tool
+ * so that requests sent to Shashu include workflow context and x-shashu-source-tool
  * JSON for Shadow AI detection. Use with createOpenAI({ baseURL, headers: getShashuHeaders() }).
  */
 export function getShashuHeaders(
@@ -68,14 +68,14 @@ export function getShashuHeaders(
  *   import { createShashuOpenAIOptions } from '@shashu-ai/sdk/middleware/vercel-ai';
  *
  *   const openaiOptions = createShashuOpenAIOptions({
- *     baseUrl: process.env.TRUSTGATE_BASE_URL!,
- *     apiKey: process.env.TRUSTGATE_API_KEY,
+ *     baseUrl: process.env.SHASHU_BASE_URL!,
+ *     apiKey: process.env.SHASHU_API_KEY,
  *   });
  *
  *   const openai = createOpenAI(openaiOptions);
  *   // use openai('gpt-4') with streamText()
  *
- * Returns `{}` when TRUSTGATE_DISABLE is set: the provider client is then left
+ * Returns `{}` when SHASHU_DISABLE is set: the provider client is then left
  * exactly as it was — its own endpoint, its own credential, no Shashu context
  * headers — which is the same no-op the Python SDK's patchers perform. The
  * caller's tg_sk_ key is deliberately NOT handed back, since it would be sent to

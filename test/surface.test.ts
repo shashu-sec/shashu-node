@@ -135,8 +135,8 @@ const EXPECTED_EXPORTS = [
  */
 const CONFIG_ERROR = (entryPoint: string, argument: string) =>
   `SHASHU gateway address is not configured, so ${entryPoint} has ` +
-  `nothing to route to. Pass ${argument} to ${entryPoint}, or set one of the ` +
-  `SHASHU_BASE_URL or TRUSTGATE_BASE_URL environment variables. SHASHU is ` +
+  `nothing to route to. Pass ${argument} to ${entryPoint}, or set the ` +
+  `SHASHU_BASE_URL environment variable. SHASHU is ` +
   `self-hosted: the SDK has no default address and will not guess one.`;
 
 describe('the public surface is exactly what the contract freezes', () => {
@@ -219,15 +219,15 @@ describe('retrievalScope covers what isolateRetrieval was public for', () => {
 });
 
 describe('the documented argument order', () => {
-  const ORIGINAL = process.env.TRUSTGATE_DISABLE;
+  const ORIGINAL = process.env.SHASHU_DISABLE;
   beforeEach(() => {
     // The bus is a no-op when disabled, which is what lets these assert the
     // SIGNATURE without standing up a gateway or reaching the network.
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
   });
   afterEach(() => {
-    if (ORIGINAL === undefined) delete process.env.TRUSTGATE_DISABLE;
-    else process.env.TRUSTGATE_DISABLE = ORIGINAL;
+    if (ORIGINAL === undefined) delete process.env.SHASHU_DISABLE;
+    else process.env.SHASHU_DISABLE = ORIGINAL;
   });
 
   it('declareRetrieval takes docs first, then corpus/query/source', () => {
@@ -247,15 +247,15 @@ describe('the documented argument order', () => {
 });
 
 describe('the frozen config error', () => {
-  const ORIGINAL = process.env.TRUSTGATE_BASE_URL;
+  const ORIGINAL = process.env.SHASHU_BASE_URL;
   const ORIGINAL_SHASHU = process.env.SHASHU_BASE_URL;
   beforeEach(() => {
-    delete process.env.TRUSTGATE_BASE_URL;
+    delete process.env.SHASHU_BASE_URL;
     delete process.env.SHASHU_BASE_URL;
   });
   afterEach(() => {
-    if (ORIGINAL === undefined) delete process.env.TRUSTGATE_BASE_URL;
-    else process.env.TRUSTGATE_BASE_URL = ORIGINAL;
+    if (ORIGINAL === undefined) delete process.env.SHASHU_BASE_URL;
+    else process.env.SHASHU_BASE_URL = ORIGINAL;
     if (ORIGINAL_SHASHU === undefined) delete process.env.SHASHU_BASE_URL;
     else process.env.SHASHU_BASE_URL = ORIGINAL_SHASHU;
   });
@@ -272,13 +272,13 @@ describe('the frozen config error', () => {
     }
   });
 
-  it('names SHASHU_BASE_URL and TRUSTGATE_BASE_URL', () => {
+  it('names SHASHU_BASE_URL and SHASHU_BASE_URL', () => {
     try {
       requireBaseUrl(undefined, { entryPoint: 'new Shashu()' });
       throw new Error('unreachable: requireBaseUrl resolved an address it should not have');
     } catch (e) {
       expect((e as Error).message).toContain('SHASHU_BASE_URL');
-      expect((e as Error).message).toContain('TRUSTGATE_BASE_URL');
+      expect((e as Error).message).toContain('SHASHU_BASE_URL');
     }
   });
 

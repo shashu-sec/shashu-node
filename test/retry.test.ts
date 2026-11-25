@@ -64,7 +64,11 @@ describe('executeWithRetry (unit)', () => {
     });
     expect(res.status).toBe(200);
     expect(send).toHaveBeenCalledTimes(3);
-    expect(sleeps).toEqual([0.5, 1.0]);
+    expect(sleeps.length).toBe(2);
+    expect(sleeps[0]).toBeGreaterThanOrEqual(0.5);
+    expect(sleeps[0]).toBeLessThanOrEqual(0.6);
+    expect(sleeps[1]).toBeGreaterThanOrEqual(1.0);
+    expect(sleeps[1]).toBeLessThanOrEqual(1.2);
   });
 
   it('exhausts connection retries then rethrows', async () => {
@@ -79,7 +83,8 @@ describe('executeWithRetry (unit)', () => {
     await executeWithRetry(send, policy(), async (s) => {
       sleeps.push(s);
     });
-    expect(sleeps).toEqual([1]); // the gateway's Retry-After, not exponential 0.5
+    expect(sleeps[0]).toBeGreaterThanOrEqual(1);
+    expect(sleeps[0]).toBeLessThanOrEqual(1.2); // Retry-After plus jitter
     expect(send).toHaveBeenCalledTimes(2);
   });
 

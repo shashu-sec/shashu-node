@@ -28,9 +28,9 @@ const ENV_VARS = [
   'SHASHU_BASE_URL',
   'SHASHU_API_KEY',
   'SHASHU_DISABLE',
-  'TRUSTGATE_BASE_URL',
-  'TRUSTGATE_API_KEY',
-  'TRUSTGATE_DISABLE',
+  'SHASHU_BASE_URL',
+  'SHASHU_API_KEY',
+  'SHASHU_DISABLE',
 ] as const;
 
 let savedEnv: Record<string, string | undefined>;
@@ -118,7 +118,7 @@ describe.each(REQUIRING_SITES)('%s with nothing configured', (entryPoint, call) 
       expect.unreachable('expected a ShashuConfigError');
     } catch (e) {
       const message = (e as Error).message;
-      expect(message).toContain('TRUSTGATE_BASE_URL');
+      expect(message).toContain('SHASHU_BASE_URL');
       expect(message).toContain('baseUrl');
       expect(message).toContain(entryPoint);
     }
@@ -142,12 +142,12 @@ describe.each(REQUIRING_SITES)('%s with nothing configured', (entryPoint, call) 
 
 describe.each(REQUIRING_SITES)('%s resolution order', (_entryPoint, call) => {
   it('prefers the explicit option over the environment', () => {
-    process.env.TRUSTGATE_BASE_URL = 'https://from-env.invalid';
+    process.env.SHASHU_BASE_URL = 'https://from-env.invalid';
     expect(call('https://from-argument.invalid').baseUrl).toBe('https://from-argument.invalid');
   });
 
   it('uses the environment when no option is passed', () => {
-    process.env.TRUSTGATE_BASE_URL = 'https://from-env.invalid';
+    process.env.SHASHU_BASE_URL = 'https://from-env.invalid';
     expect(call().baseUrl).toBe('https://from-env.invalid');
   });
 
@@ -156,7 +156,7 @@ describe.each(REQUIRING_SITES)('%s resolution order', (_entryPoint, call) => {
   });
 
   it('treats a blank env var as unset rather than as an address', () => {
-    process.env.TRUSTGATE_BASE_URL = '   ';
+    process.env.SHASHU_BASE_URL = '   ';
     expect(() => call()).toThrow(ShashuConfigError);
   });
 });
@@ -189,14 +189,14 @@ describe('tracer', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('reads TRUSTGATE_BASE_URL when it is set', async () => {
-    process.env.TRUSTGATE_BASE_URL = 'https://from-env.invalid/';
+  it('reads SHASHU_BASE_URL when it is set', async () => {
+    process.env.SHASHU_BASE_URL = 'https://from-env.invalid/';
     const tracer = await freshTracer();
     expect(tracer.gatewayUrl).toBe('https://from-env.invalid');
   });
 
   it('configure() still wins over the environment', async () => {
-    process.env.TRUSTGATE_BASE_URL = 'https://from-env.invalid';
+    process.env.SHASHU_BASE_URL = 'https://from-env.invalid';
     const tracer = await freshTracer();
     tracer.configure({ baseUrl: 'https://configured.invalid/' });
     expect(tracer.gatewayUrl).toBe('https://configured.invalid');
@@ -204,10 +204,10 @@ describe('tracer', () => {
 });
 
 // --------------------------------------------------------------------------- //
-// 5. TRUSTGATE_DISABLE — the kill switch
+// 5. SHASHU_DISABLE — the kill switch
 // --------------------------------------------------------------------------- //
 
-describe('TRUSTGATE_DISABLE=1', () => {
+describe('SHASHU_DISABLE=1', () => {
   const MIDDLEWARES: Array<[string, () => Record<string, unknown>]> = [
     ['createShashuAnthropicConfig()', () => createShashuAnthropicConfig({ apiKey: 'tg_sk_x' })],
     ['createShashuGeminiConfig()', () => createShashuGeminiConfig({ apiKey: 'tg_sk_x' })],
@@ -216,15 +216,15 @@ describe('TRUSTGATE_DISABLE=1', () => {
   ];
 
   it.each(MIDDLEWARES)('%s returns cleanly with no address configured at all', (_name, call) => {
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     expect(() => call()).not.toThrow();
   });
 
   it.each(MIDDLEWARES)(
     '%s hands back nothing that re-points the provider client',
     (_name, call) => {
-      process.env.TRUSTGATE_DISABLE = '1';
-      process.env.TRUSTGATE_BASE_URL = 'https://gw.invalid';
+      process.env.SHASHU_DISABLE = '1';
+      process.env.SHASHU_BASE_URL = 'https://gw.invalid';
 
       // A disabled SDK leaves the provider client exactly as it was: no base URL
       // override, no Shashu context headers, and NOT the caller's tg_sk_ key
@@ -239,18 +239,18 @@ describe('TRUSTGATE_DISABLE=1', () => {
     ['on', 'on'],
     ['uppercase TRUE', 'TRUE'],
   ])('accepts %s as off, because platform tooling emits it', (_label, value) => {
-    process.env.TRUSTGATE_DISABLE = value;
+    process.env.SHASHU_DISABLE = value;
     expect(createShashuAnthropicConfig({ apiKey: 'tg_sk_x' })).toEqual({});
   });
 
   it('does not read an unrelated value as off', () => {
-    process.env.TRUSTGATE_DISABLE = '0';
+    process.env.SHASHU_DISABLE = '0';
     expect(() => createShashuAnthropicConfig({ apiKey: 'tg_sk_x' })).toThrow(ShashuConfigError);
   });
 
   it('stops the tracer flushing even with an address and a key', async () => {
-    process.env.TRUSTGATE_DISABLE = '1';
-    process.env.TRUSTGATE_BASE_URL = 'https://gw.invalid';
+    process.env.SHASHU_DISABLE = '1';
+    process.env.SHASHU_BASE_URL = 'https://gw.invalid';
     vi.resetModules();
     const { tracer } = await import('../src/tracer');
     const fetchSpy = vi.fn();
@@ -264,7 +264,7 @@ describe('TRUSTGATE_DISABLE=1', () => {
   });
 
   it('still gives a disabled app its trace context, so reading it does not break', async () => {
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     vi.resetModules();
     const { tracer } = await import('../src/tracer');
 
@@ -279,7 +279,7 @@ describe('TRUSTGATE_DISABLE=1', () => {
     // points (the middlewares, the tracer). `new Shashu()` is an explicit
     // "send this to my gateway" and there is nothing for it to no-op INTO, so
     // it still refuses an unnamed address rather than silently doing nothing.
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     expect(() => new Shashu({ apiKey: 'tg_sk_not_a_real_key' })).toThrow(ShashuConfigError);
   });
 });

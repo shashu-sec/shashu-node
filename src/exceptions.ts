@@ -270,9 +270,9 @@ export class ShashuProviderError extends ShashuError {
  * The gateway blocked the content. ONE type, both encodings.
  *
  * A security block reaches the caller in one of two shapes, and which one
- * depends on request headers (`trustgate-version`, `trustgate-block-encoding`)
+ * depends on request headers (`shashu-version`, `shashu-block-encoding`)
  * or an account default the caller may not control. Since 4.0.0 this SDK
- * sends `trustgate-version: 2026-09-01` by default, so the 400 is what a
+ * sends `shashu-version: 2026-09-01` by default, so the 400 is what a
  * caller sees unless they pass `contractVersion: null`:
  *
  *   - `compatible` / legacy — **HTTP 200**, `finish_reason "content_filter"`.
@@ -386,7 +386,7 @@ const HTTP_SHAPED_CODE = /^[0-9]{3}$/;
  *      `2026-09-01` or later;
  *   2. the **HTTP status as a string** — `"401"`, `"403"`, `"429"`. Still
  *      live, but no longer what this SDK asks for: since 4.0.0 it sends
- *      `trustgate-version: 2026-09-01` by default. A caller that passes
+ *      `shashu-version: 2026-09-01` by default. A caller that passes
  *      `contractVersion: null` on an account with no default is served
  *      `legacy`, and every refusal the gateway's `HTTPException` handler
  *      renders carries `str(status_code)` whatever the version;

@@ -251,7 +251,7 @@ parsed is still `true`.
 ### The 400 path — headers are the discriminator
 
 On an error response, what says the response is OURS is the presence of the
-`x-trustgate-*` headers, **not** the value of any code. Headers present means
+`x-shashu-*` headers, **not** the value of any code. Headers present means
 it passed through the gateway. Headers absent means it is not ours — most
 likely the caller's own malformed request — and no SDK may claim it as a
 TrustGate block. Every builder in `app/contract/responses.py` attaches
@@ -267,7 +267,7 @@ mandatory or every decision reads as absence, silently.
 Additive in v1, added 2026-09-08 alongside the client factory below.
 
 A framework can drop the envelope between the wire and the caller. Measured
-against langchain-openai 1.6.1: `openai` keeps the top-level `trustgate` object
+against langchain-openai 1.6.1: `openai` keeps the top-level `shashu` object
 on `ChatCompletion.model_extra`, but LangChain's `_create_chat_result` builds
 `response_metadata` from a fixed key list, so the body carrier does not reach
 the caller at all. The HEADERS do (`ChatOpenAI(include_response_headers=True)`).
@@ -313,7 +313,7 @@ Five properties are fixed in every language:
    memory and route policy.
 2. **Body first, header counts as the fallback, carrier recorded.** When the
    body carried no envelope — a streaming or header-only reader — the counts
-   come from `x-trustgate-attachments` / `x-trustgate-memory`, `items` is empty,
+   come from `x-shashu-attachments` / `x-shashu-memory`, `items` is empty,
    and `carrier` says `"header"` rather than `"body"`. Nothing per-file and no
    route policy ever rides a header. The header does not carry
    `scanned_partial`; it is the remainder of `total` after the other three
@@ -345,7 +345,7 @@ Additive in v1, added 2026-09-08.
 Most agents are not written against a TrustGate client. They are written
 against `ChatOpenAI`, `LlamaIndex`'s `OpenAI`, or a bare provider SDK, and
 those never call our client — so our retrieval joiner is not mounted and our
-`x-trustgate-*` headers are never built.
+`x-shashu-*` headers are never built.
 
 Every OpenAI-compatible SDK already accepts a caller-supplied HTTP client. That
 is the seam, and each SDK exposes a factory for it. **The factory patches
@@ -386,9 +386,9 @@ Three properties are fixed in every language:
    agent's tool loop lands in one session.
 3. **A caller-supplied transport is never replaced**, only defaulted.
 
-### `TrustGate-Version`
+### `Shashu-Version`
 
-Every SDK sends `TrustGate-Version: 2026-09-01` on every request by default:
+Every SDK sends `Shashu-Version: 2026-09-01` on every request by default:
 its own client, its streaming call, and every path that routes a provider
 client through the gateway (the transport, interceptor, handler or fetch it
 hands out). Python since 0.15.2; Node since 4.0.0; Java and .NET since
@@ -402,10 +402,10 @@ What the version changes for the caller:
   quota or unfinished inspection a 402, 429 or 503. On `legacy` every one of
   them is a 200 whose content is the refusal sentence. Each SDK raises its
   existing types for these, with the gateway's sentence as the message.
-* **The decision is in the body.** A delivered reply carries the `trustgate`
+* **The decision is in the body.** A delivered reply carries the `shashu`
   envelope, so `memory`, `attachments`, `inspection` and `route_policy` are read
   from the body with their items. On `legacy` only the counts in the
-  `x-trustgate-*` headers arrive.
+  `x-shashu-*` headers arrive.
 * **The A2A depth and loop breakers are a 403**, not a retried 429.
 
 It is a **default, not a hardcode.** Every SDK lets the caller pin another
@@ -414,9 +414,9 @@ date or send no version at all: `contract_version=None` (Python),
 `ContractVersion = null` (.NET). A version the caller set on the request
 itself is never replaced.
 
-### `TrustGate-Block-Encoding`
+### `Shashu-Block-Encoding`
 
-The factory sends `TrustGate-Block-Encoding: explicit` by default: a block
+The factory sends `Shashu-Block-Encoding: explicit` by default: a block
 comes back as a **4xx whose body names the finding code**, rather than a 200
 whose `finish_reason` is `content_filter`. Through a framework, the 200 shape
 is the dangerous one — the caller is handed an empty answer and no exception,
@@ -424,7 +424,7 @@ so a block looks like a model that had nothing to say.
 
 It is a **default, not a hardcode.** Every SDK lets the caller choose another
 encoding or send no such header at all. The gateway reads it only on a
-non-legacy version, which is why `TrustGate-Version` is sent with it.
+non-legacy version, which is why `Shashu-Version` is sent with it.
 
 ---
 
@@ -434,7 +434,7 @@ Additive in v1, added 2026-09-13. Python ships it in 0.16.0; Node in 3.0.0;
 .NET and Java in this pass.
 
 The session is what the gateway's Sessions screen groups on. A request that
-carries no `x-trustgate-session-id` gets one derived by the gateway from the
+carries no `x-shashu-session-id` gets one derived by the gateway from the
 agent id and the first system-or-user message, so every run of an agent whose
 first message is a static system prompt lands in the SAME session. So every
 client shape sends one, from the first request, including at origin.

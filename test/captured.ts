@@ -197,7 +197,7 @@ export const SECURITY_BLOCK_400_JAILBREAK = {
     type: 'content_filter',
     param: null,
     code: 'jailbreak',
-    trustgate: {
+    shashu: {
       decision: 'block',
       retryable: false,
       id: '9f4c1c2e-6b3d-4a51-9c0e-2a7f8b1d4e30',
@@ -216,7 +216,7 @@ export const SECURITY_BLOCK_400_DLP = {
     type: 'content_filter',
     param: null,
     code: 'dlp',
-    trustgate: {
+    shashu: {
       decision: 'block',
       retryable: false,
       id: '9f4c1c2e-6b3d-4a51-9c0e-2a7f8b1d4e30',
@@ -239,7 +239,7 @@ export const POLICY_403_EGRESS_DENIED = {
     type: 'permission_error',
     param: null,
     code: 'egress_denied',
-    trustgate: {
+    shashu: {
       decision: 'refuse',
       retryable: false,
       id: '9f4c1c2e-6b3d-4a51-9c0e-2a7f8b1d4e30',

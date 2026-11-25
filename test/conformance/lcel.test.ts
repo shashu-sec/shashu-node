@@ -63,7 +63,7 @@ beforeEach(() => {
 afterEach(() => {
   uninstall();
   clear();
-  delete process.env.TRUSTGATE_DISABLE;
+  delete process.env.SHASHU_DISABLE;
 });
 
 describe('(a) an LCEL chain, with no line added to it', () => {
@@ -106,7 +106,7 @@ describe('(a) an LCEL chain, with no line added to it', () => {
 });
 
 describe('(d) negative: the collector is not installed', () => {
-  it('sends no trustgate_metadata at all', async () => {
+  it('sends no shashu_metadata at all', async () => {
     const canary = nonce('uninstalled');
     await chainFor(canary).invoke('q');
     expect(gateway.requests).toHaveLength(1);
@@ -192,10 +192,10 @@ describe('(e) the collector and an explicit declaration together', () => {
   });
 });
 
-describe('(f) TRUSTGATE_DISABLE=1', () => {
+describe('(f) SHASHU_DISABLE=1', () => {
   it('makes the whole collector inert', async () => {
     await install({ corpus: 'policy_docs_v2' });
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     // The middleware hands back {} when disabled, so point the model at the mock
     // directly: the question is whether the COLLECTOR declares, not whether the
     // config still rewrites the endpoint (config.test.ts covers that).

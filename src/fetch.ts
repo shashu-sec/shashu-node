@@ -33,7 +33,7 @@ import {
 export const DEFAULT_BLOCK_ENCODING = 'explicit';
 
 /** The header `DEFAULT_BLOCK_ENCODING` is sent under. Lowercase. */
-export const BLOCK_ENCODING_HEADER = 'trustgate-block-encoding';
+export const BLOCK_ENCODING_HEADER = 'shashu-block-encoding';
 
 export interface ShashuFetchOptions {
   /** Session every request this fetch makes joins. Minted once when omitted. */
@@ -49,12 +49,12 @@ export interface ShashuFetchOptions {
   /** Callable returning the current cloud pass. Mutually exclusive with apiKey. */
   tokenProvider?: () => string | Promise<string>;
   /**
-   * `TrustGate-Block-Encoding`. Default `explicit`. Pass `null` to send no
+   * `Shashu-Block-Encoding`. Default `explicit`. Pass `null` to send no
    * such header.
    */
   blockEncoding?: string | null;
   /**
-   * `trustgate-version`. Default `DEFAULT_CONTRACT_VERSION` (`"2026-09-01"`).
+   * `shashu-version`. Default `DEFAULT_CONTRACT_VERSION` (`"2026-09-01"`).
    * Without it the gateway serves its legacy contract and discards the block
    * encoding above. Pass `null` to send no such header.
    */
@@ -64,7 +64,7 @@ export interface ShashuFetchOptions {
 /**
  * A `fetch` to hand to a provider SDK's `fetch` option.
  *
- * Carries the retrieval joiner and the `x-trustgate-*` header set, so a
+ * Carries the retrieval joiner and the `x-shashu-*` header set, so a
  * LangChain / Vercel AI / raw-`openai` call made through it is attributed,
  * traced and able to declare its retrieval — with nothing patched.
  */

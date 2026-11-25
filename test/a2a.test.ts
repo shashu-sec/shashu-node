@@ -46,10 +46,10 @@ describe('captureIncoming', () => {
   it('populates the store including the inbound caller', () => {
     tracer.incoming(
       {
-        'x-trustgate-trace-id': 'flow-1',
-        'x-trustgate-session-id': 'sess-1',
-        'x-trustgate-hop-depth': '2',
-        'x-trustgate-caller-agent-id': 'agent-A',
+        'x-shashu-trace-id': 'flow-1',
+        'x-shashu-session-id': 'sess-1',
+        'x-shashu-hop-depth': '2',
+        'x-shashu-caller-agent-id': 'agent-A',
       },
       () => {
         expect(tracer.isA2aHop).toBe(true);
@@ -64,7 +64,7 @@ describe('captureIncoming', () => {
 
   it('no inbound trace is origin (returns false, clears ambient)', () => {
     tracer.incoming({}, () => {
-      expect(captureIncoming({ 'x-trustgate-session-id': 's' })).toBe(false);
+      expect(captureIncoming({ 'x-shashu-session-id': 's' })).toBe(false);
       expect(captureIncoming({})).toBe(false);
       expect(captureIncoming(undefined)).toBe(false);
       expect(tracer.isA2aHop).toBe(false);
@@ -74,9 +74,9 @@ describe('captureIncoming', () => {
   it('is case-insensitive', () => {
     tracer.incoming(
       {
-        'X-TrustGate-Trace-Id': 'T1',
-        'X-Trustgate-Session-Id': 'S1',
-        'X-TrustGate-Caller-Agent-Id': 'A1',
+        'X-Shashu-Trace-Id': 'T1',
+        'X-Shashu-Session-Id': 'S1',
+        'X-Shashu-Caller-Agent-Id': 'A1',
       },
       () => {
         expect(tracer.traceId).toBe('T1');
@@ -87,7 +87,7 @@ describe('captureIncoming', () => {
   });
 
   it('accepts a Headers object', () => {
-    const h = new Headers({ 'x-trustgate-trace-id': 'T2', 'x-trustgate-hop-depth': '5' });
+    const h = new Headers({ 'x-shashu-trace-id': 'T2', 'x-shashu-hop-depth': '5' });
     tracer.incoming(h, () => {
       expect(tracer.traceId).toBe('T2');
       expect(tracer.outboundHopDepth).toBe(6);
@@ -95,23 +95,23 @@ describe('captureIncoming', () => {
   });
 
   it('without a hop header defaults outbound depth to 1', () => {
-    tracer.incoming({ 'x-trustgate-trace-id': 'f' }, () => {
+    tracer.incoming({ 'x-shashu-trace-id': 'f' }, () => {
       expect(tracer.inboundHopDepth).toBe(0);
       expect(tracer.outboundHopDepth).toBe(1);
     });
   });
 
   it('without a caller header leaves inboundCallerAgentId undefined', () => {
-    tracer.incoming({ 'x-trustgate-trace-id': 'f', 'x-trustgate-hop-depth': '1' }, () => {
+    tracer.incoming({ 'x-shashu-trace-id': 'f', 'x-shashu-hop-depth': '1' }, () => {
       expect(tracer.inboundCallerAgentId).toBeUndefined();
     });
   });
 
   it('a re-capture without a caller resets a stale caller', () => {
     tracer.incoming({}, () => {
-      captureIncoming({ 'x-trustgate-trace-id': 'f1', 'x-trustgate-caller-agent-id': 'A' });
+      captureIncoming({ 'x-shashu-trace-id': 'f1', 'x-shashu-caller-agent-id': 'A' });
       expect(tracer.inboundCallerAgentId).toBe('A');
-      captureIncoming({ 'x-trustgate-trace-id': 'f2' });
+      captureIncoming({ 'x-shashu-trace-id': 'f2' });
       expect(tracer.inboundCallerAgentId).toBeUndefined();
     });
   });
@@ -124,16 +124,16 @@ describe('buildContextHeaders (gateway call)', () => {
   it('propagates the captured trace (not minted) with session + hop+1', () => {
     tracer.incoming(
       {
-        'x-trustgate-trace-id': 'flow-xyz',
-        'x-trustgate-session-id': 'sess-1',
-        'x-trustgate-hop-depth': '2',
-        'x-trustgate-caller-agent-id': 'agent-A',
+        'x-shashu-trace-id': 'flow-xyz',
+        'x-shashu-session-id': 'sess-1',
+        'x-shashu-hop-depth': '2',
+        'x-shashu-caller-agent-id': 'agent-A',
       },
       () => {
         const h = buildContextHeaders(ctx());
-        expect(h['x-trustgate-trace-id']).toBe('flow-xyz'); // propagated, not a fresh uuid
-        expect(h['x-trustgate-session-id']).toBe('sess-1');
-        expect(h['x-trustgate-hop-depth']).toBe('3'); // inbound 2 + 1
+        expect(h['x-shashu-trace-id']).toBe('flow-xyz'); // propagated, not a fresh uuid
+        expect(h['x-shashu-session-id']).toBe('sess-1');
+        expect(h['x-shashu-hop-depth']).toBe('3'); // inbound 2 + 1
       }
     );
   });
@@ -141,58 +141,58 @@ describe('buildContextHeaders (gateway call)', () => {
   it('FORWARDS the inbound caller, never self (§4.1)', () => {
     tracer.incoming(
       {
-        'x-trustgate-trace-id': 'F',
-        'x-trustgate-caller-agent-id': 'agent-A',
-        'x-trustgate-hop-depth': '1',
+        'x-shashu-trace-id': 'F',
+        'x-shashu-caller-agent-id': 'agent-A',
+        'x-shashu-hop-depth': '1',
       },
       () => {
         const h = buildContextHeaders(ctx());
-        expect(h['x-trustgate-caller-agent-id']).toBe('agent-A');
+        expect(h['x-shashu-caller-agent-id']).toBe('agent-A');
       }
     );
   });
 
   it('origin emits NO A2A lineage headers', () => {
     const h = buildContextHeaders(ctx()); // no capture
-    expect(h['x-trustgate-session-id']).toBeUndefined();
-    expect(h['x-trustgate-caller-agent-id']).toBeUndefined();
-    expect(h['x-trustgate-hop-depth']).toBeUndefined();
+    expect(h['x-shashu-session-id']).toBeUndefined();
+    expect(h['x-shashu-caller-agent-id']).toBeUndefined();
+    expect(h['x-shashu-hop-depth']).toBeUndefined();
   });
 
   it('omits caller-agent-id when no inbound caller was captured', () => {
-    tracer.incoming({ 'x-trustgate-trace-id': 'f', 'x-trustgate-hop-depth': '1' }, () => {
+    tracer.incoming({ 'x-shashu-trace-id': 'f', 'x-shashu-hop-depth': '1' }, () => {
       const h = buildContextHeaders(ctx());
-      expect(h['x-trustgate-trace-id']).toBe('f');
-      expect(h['x-trustgate-hop-depth']).toBe('2');
-      expect(h['x-trustgate-caller-agent-id']).toBeUndefined();
+      expect(h['x-shashu-trace-id']).toBe('f');
+      expect(h['x-shashu-hop-depth']).toBe('2');
+      expect(h['x-shashu-caller-agent-id']).toBeUndefined();
     });
   });
 
   it('omits session when none was propagated', () => {
-    tracer.incoming({ 'x-trustgate-trace-id': 'f', 'x-trustgate-caller-agent-id': 'A' }, () => {
+    tracer.incoming({ 'x-shashu-trace-id': 'f', 'x-shashu-caller-agent-id': 'A' }, () => {
       const h = buildContextHeaders(ctx());
-      expect(h['x-trustgate-session-id']).toBeUndefined();
-      expect(h['x-trustgate-caller-agent-id']).toBe('A'); // forwarded invoker
-      expect(h['x-trustgate-hop-depth']).toBe('1');
+      expect(h['x-shashu-session-id']).toBeUndefined();
+      expect(h['x-shashu-caller-agent-id']).toBe('A'); // forwarded invoker
+      expect(h['x-shashu-hop-depth']).toBe('1');
     });
   });
 
   it('a span inside a captured flow inherits the trace + still forwards lineage', async () => {
     await tracer.incoming(
       {
-        'x-trustgate-trace-id': 'FLOW',
-        'x-trustgate-session-id': 'S',
-        'x-trustgate-hop-depth': '1',
-        'x-trustgate-caller-agent-id': 'A',
+        'x-shashu-trace-id': 'FLOW',
+        'x-shashu-session-id': 'S',
+        'x-shashu-hop-depth': '1',
+        'x-shashu-caller-agent-id': 'A',
       },
       async () => {
         await tracer.span('work', async () => {
           const h = buildContextHeaders(ctx());
-          expect(h['x-trustgate-trace-id']).toBe('FLOW'); // span inherits captured trace
-          expect(h['x-trustgate-span-id']).toBeDefined();
-          expect(h['x-trustgate-session-id']).toBe('S');
-          expect(h['x-trustgate-caller-agent-id']).toBe('A'); // forwarded invoker, not self
-          expect(h['x-trustgate-hop-depth']).toBe('2');
+          expect(h['x-shashu-trace-id']).toBe('FLOW'); // span inherits captured trace
+          expect(h['x-shashu-span-id']).toBeDefined();
+          expect(h['x-shashu-session-id']).toBe('S');
+          expect(h['x-shashu-caller-agent-id']).toBe('A'); // forwarded invoker, not self
+          expect(h['x-shashu-hop-depth']).toBe('2');
         });
       }
     );
@@ -201,10 +201,10 @@ describe('buildContextHeaders (gateway call)', () => {
   it('all header keys stay lowercase mid-flow', () => {
     tracer.incoming(
       {
-        'x-trustgate-trace-id': 't',
-        'x-trustgate-session-id': 's',
-        'x-trustgate-hop-depth': '1',
-        'x-trustgate-caller-agent-id': 'a',
+        'x-shashu-trace-id': 't',
+        'x-shashu-session-id': 's',
+        'x-shashu-hop-depth': '1',
+        'x-shashu-caller-agent-id': 'a',
       },
       () => {
         const h = buildContextHeaders(ctx());
@@ -220,26 +220,26 @@ describe('buildContextHeaders (gateway call)', () => {
 describe('buildInvocationHeaders (invoking side)', () => {
   it('at origin stamps caller = self, mints a trace, hop = 1, no session', () => {
     const h = buildInvocationHeaders({ callerAgentId: 'agent-A' });
-    expect(h['x-trustgate-caller-agent-id']).toBe('agent-A');
-    expect(h['x-trustgate-trace-id']).toBeDefined();
-    expect(h['x-trustgate-hop-depth']).toBe('1');
-    expect(h['x-trustgate-session-id']).toBeUndefined();
+    expect(h['x-shashu-caller-agent-id']).toBe('agent-A');
+    expect(h['x-shashu-trace-id']).toBeDefined();
+    expect(h['x-shashu-hop-depth']).toBe('1');
+    expect(h['x-shashu-session-id']).toBeUndefined();
   });
 
   it('mid-flow propagates the served flow with caller = self', () => {
     tracer.incoming(
       {
-        'x-trustgate-trace-id': 'F',
-        'x-trustgate-session-id': 'S',
-        'x-trustgate-hop-depth': '1',
-        'x-trustgate-caller-agent-id': 'agent-A',
+        'x-shashu-trace-id': 'F',
+        'x-shashu-session-id': 'S',
+        'x-shashu-hop-depth': '1',
+        'x-shashu-caller-agent-id': 'agent-A',
       },
       () => {
         const h = buildInvocationHeaders({ callerAgentId: 'agent-B' });
-        expect(h['x-trustgate-trace-id']).toBe('F'); // served flow propagated
-        expect(h['x-trustgate-caller-agent-id']).toBe('agent-B'); // B stamps ITSELF as invoker of C
-        expect(h['x-trustgate-session-id']).toBe('S');
-        expect(h['x-trustgate-hop-depth']).toBe('2');
+        expect(h['x-shashu-trace-id']).toBe('F'); // served flow propagated
+        expect(h['x-shashu-caller-agent-id']).toBe('agent-B'); // B stamps ITSELF as invoker of C
+        expect(h['x-shashu-session-id']).toBe('S');
+        expect(h['x-shashu-hop-depth']).toBe('2');
       }
     );
   });
@@ -252,34 +252,34 @@ describe('buildInvocationHeaders (invoking side)', () => {
       hopDepth: 5,
     });
     expect(h).toEqual({
-      'x-trustgate-trace-id': 'T',
-      'x-trustgate-caller-agent-id': 'me',
-      'x-trustgate-hop-depth': '5',
-      'x-trustgate-session-id': 'S',
+      'x-shashu-trace-id': 'T',
+      'x-shashu-caller-agent-id': 'me',
+      'x-shashu-hop-depth': '5',
+      'x-shashu-session-id': 'S',
     });
   });
 
   it('forms the A→B→C chain end-to-end (header level)', () => {
     // A (origin) invokes B: A stamps caller = A.
     const aToB = buildInvocationHeaders({ callerAgentId: 'agent-A', traceId: 'FLOW' });
-    expect(aToB['x-trustgate-caller-agent-id']).toBe('agent-A');
+    expect(aToB['x-shashu-caller-agent-id']).toBe('agent-A');
 
     // B serves A's call: B's gateway call FORWARDS caller = A (the A→B edge).
     tracer.incoming(aToB, () => {
       const bGateway = buildContextHeaders(ctx());
-      expect(bGateway['x-trustgate-trace-id']).toBe('FLOW');
-      expect(bGateway['x-trustgate-caller-agent-id']).toBe('agent-A');
-      expect(bGateway['x-trustgate-hop-depth']).toBe('2'); // inbound 1 + 1
+      expect(bGateway['x-shashu-trace-id']).toBe('FLOW');
+      expect(bGateway['x-shashu-caller-agent-id']).toBe('agent-A');
+      expect(bGateway['x-shashu-hop-depth']).toBe('2'); // inbound 1 + 1
 
       // B invokes C: B stamps ITSELF; C will then forward B (the B→C edge).
       const bToC = buildInvocationHeaders({ callerAgentId: 'agent-B' });
-      expect(bToC['x-trustgate-caller-agent-id']).toBe('agent-B');
-      expect(bToC['x-trustgate-trace-id']).toBe('FLOW'); // same flow
+      expect(bToC['x-shashu-caller-agent-id']).toBe('agent-B');
+      expect(bToC['x-shashu-trace-id']).toBe('FLOW'); // same flow
 
       tracer.incoming(bToC, () => {
         const cGateway = buildContextHeaders(ctx());
-        expect(cGateway['x-trustgate-caller-agent-id']).toBe('agent-B'); // C forwards B
-        expect(cGateway['x-trustgate-hop-depth']).toBe('3');
+        expect(cGateway['x-shashu-caller-agent-id']).toBe('agent-B'); // C forwards B
+        expect(cGateway['x-shashu-hop-depth']).toBe('3');
       });
     });
   });
@@ -292,20 +292,20 @@ describe('tracer.incoming', () => {
   it('scopes capture and restores origin on exit', () => {
     tracer.incoming(
       {
-        'x-trustgate-trace-id': 'T',
-        'x-trustgate-session-id': 'S',
-        'x-trustgate-caller-agent-id': 'A',
+        'x-shashu-trace-id': 'T',
+        'x-shashu-session-id': 'S',
+        'x-shashu-caller-agent-id': 'A',
       },
       () => {
         expect(tracer.isA2aHop).toBe(true);
-        expect(buildContextHeaders(ctx())['x-trustgate-trace-id']).toBe('T');
+        expect(buildContextHeaders(ctx())['x-shashu-trace-id']).toBe('T');
       }
     );
     // Restored -> origin again; no lineage leakage into the next request.
     expect(tracer.isA2aHop).toBe(false);
     const h = buildContextHeaders(ctx());
-    expect(h['x-trustgate-caller-agent-id']).toBeUndefined();
-    expect(h['x-trustgate-session-id']).toBeUndefined();
+    expect(h['x-shashu-caller-agent-id']).toBeUndefined();
+    expect(h['x-shashu-session-id']).toBeUndefined();
   });
 });
 
@@ -323,7 +323,7 @@ describe('self-agent-id cache + client invocation helper', () => {
       'fetch',
       vi.fn(async (_url: string, init: { headers?: Record<string, string> }) => {
         sentHeaders = init.headers ?? {};
-        return jsonResponse(200, COMPLETION, { 'x-trustgate-agent-id': 'gw-reported' });
+        return jsonResponse(200, COMPLETION, { 'x-shashu-agent-id': 'gw-reported' });
       })
     );
 
@@ -335,9 +335,9 @@ describe('self-agent-id cache + client invocation helper', () => {
     });
     await tracer.incoming(
       {
-        'x-trustgate-trace-id': 'flow-A',
-        'x-trustgate-hop-depth': '1',
-        'x-trustgate-caller-agent-id': 'upstream-A',
+        'x-shashu-trace-id': 'flow-A',
+        'x-shashu-hop-depth': '1',
+        'x-shashu-caller-agent-id': 'upstream-A',
       },
       async () => {
         await tg.fetch(CHAT, {
@@ -347,13 +347,13 @@ describe('self-agent-id cache + client invocation helper', () => {
       }
     );
 
-    expect(sentHeaders['x-trustgate-trace-id']).toBe('flow-A'); // propagated
-    expect(sentHeaders['x-trustgate-caller-agent-id']).toBe('upstream-A'); // FORWARDED, not self
+    expect(sentHeaders['x-shashu-trace-id']).toBe('flow-A'); // propagated
+    expect(sentHeaders['x-shashu-caller-agent-id']).toBe('upstream-A'); // FORWARDED, not self
     expect(tg.agentId).toBe('gw-reported'); // response refreshed the self-id cache
 
     // The cached self-id is what THIS agent stamps when it invokes a downstream agent.
     const inv = tg.buildInvocationHeaders();
-    expect(inv['x-trustgate-caller-agent-id']).toBe('gw-reported'); // caller = self (invoking side)
+    expect(inv['x-shashu-caller-agent-id']).toBe('gw-reported'); // caller = self (invoking side)
   });
 
   it('buildInvocationHeaders throws when self-id is unknown', () => {
@@ -370,7 +370,7 @@ describe('self-agent-id cache + client invocation helper', () => {
           JSON.stringify({
             error: { message: 'blocked', type: 'invalid_request_error', code: '403' },
           }),
-          { 'x-trustgate-agent-id': 'gw-reported' }
+          { 'x-shashu-agent-id': 'gw-reported' }
         )
       )
     );
@@ -397,9 +397,9 @@ describe('self-agent-id cache + client invocation helper', () => {
       retryPolicy: null,
     });
     await tg.fetch(CHAT, { method: 'POST', body: JSON.stringify({ model: 'm', messages: [] }) });
-    expect(sentHeaders['x-trustgate-caller-agent-id']).toBeUndefined(); // origin: no caller even when seeded
-    expect(sentHeaders['x-trustgate-session-id']).toBe(tg.sessionId); // origin DOES send a session
-    expect(sentHeaders['x-trustgate-hop-depth']).toBeUndefined();
+    expect(sentHeaders['x-shashu-caller-agent-id']).toBeUndefined(); // origin: no caller even when seeded
+    expect(sentHeaders['x-shashu-session-id']).toBe(tg.sessionId); // origin DOES send a session
+    expect(sentHeaders['x-shashu-hop-depth']).toBeUndefined();
   });
 });
 

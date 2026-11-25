@@ -14,7 +14,7 @@
  */
 
 import { ShashuConfigError } from './exceptions.js';
-import { envGet, API_KEY_ENV, API_KEY_ENV_LEGACY } from './config.js';
+import { envGet, API_KEY_ENV } from './config.js';
 
 export const BOTH_OR_NEITHER = 'Give either a SHASHU key or a token provider, not both.';
 export const KEY_ONLY_FOR_NOW =
@@ -99,7 +99,7 @@ export class CredentialResolver {
   private inflight: Promise<string | undefined> | undefined;
 
   constructor(opts: { apiKey?: string; tokenProvider?: TokenProvider; requireOne?: boolean }) {
-    const envKey = envGet(API_KEY_ENV, API_KEY_ENV_LEGACY) ?? undefined;
+    const envKey = envGet(API_KEY_ENV) ?? undefined;
     const hasKeyArg = opts.apiKey !== undefined;
     const hasProvider = opts.tokenProvider !== undefined;
     if (hasKeyArg && hasProvider) throw new ShashuConfigError(BOTH_OR_NEITHER);

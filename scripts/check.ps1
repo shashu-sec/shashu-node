@@ -38,28 +38,7 @@ if ($LASTEXITCODE -ne 0) { throw "build" }
 
 Write-Host "== npm pack contents =="
 $packJson = npm pack --dry-run --json | Out-String
-$packJson | py -3.13 -c @"
-import json, sys
-raw = sys.stdin.read()
-d = json.loads(raw)
-files = d[0]['files'] if isinstance(d, list) else d.get('files', [])
-allowed_prefixes = ('dist/',)
-allowed_files = {'package.json', 'README.md', 'LICENSE', 'NOTICE', 'CHANGELOG.md'}
-bad = []
-for f in files:
-    p = f['path'].replace('\\', '/')
-    if p in allowed_files or p.startswith('dist/'):
-        if p.endswith('.map') and 'internal' in p.lower():
-            bad.append(p)
-        continue
-    bad.append(p)
-    if '_internal' in p or p.endswith('.env'):
-        bad.append(p)
-if bad:
-    print('FORBIDDEN', *sorted(set(bad)), sep='\n')
-    sys.exit(1)
-print('pack files', len(files))
-"@
+$packJson | py -3.13 scripts\_pack_contents.py
 if ($LASTEXITCODE -ne 0) { throw "pack contents" }
 
 Write-Host "== npm audit --omit=dev =="

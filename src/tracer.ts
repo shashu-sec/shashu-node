@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
-import { isDisabled, optionalBaseUrl, envGet, API_KEY_ENV, API_KEY_ENV_LEGACY } from './config.js';
+import { isDisabled, optionalBaseUrl, envGet, API_KEY_ENV } from './config.js';
 
 // Types
 export interface SpanContext {
@@ -35,9 +35,9 @@ export interface A2ACapture {
   traceId: string;
   /** The captured inbound session id, if any. */
   sessionId?: string;
-  /** Advisory inbound hop depth from x-trustgate-hop-depth (0 if absent). */
+  /** Advisory inbound hop depth from x-shashu-hop-depth (0 if absent). */
   inboundHopDepth: number;
-  /** The upstream agent that INVOKED this hop (x-trustgate-caller-agent-id), FORWARDED
+  /** The upstream agent that INVOKED this hop (x-shashu-caller-agent-id), FORWARDED
    *  on the outbound gateway call — never this agent's own id (§4.1). */
   inboundCallerAgentId?: string;
 }
@@ -89,14 +89,14 @@ function parseHopDepth(raw: unknown): number {
 
 /** Build the capture record from a header map; null when no inbound trace (origin). */
 function captureFromHeaders(h: Record<string, string>): A2ACapture | undefined {
-  const trace = (h['x-trustgate-trace-id'] ?? '').trim();
+  const trace = (h['x-shashu-trace-id'] ?? '').trim();
   if (!trace) return undefined;
-  const session = (h['x-trustgate-session-id'] ?? '').trim();
-  const caller = (h['x-trustgate-caller-agent-id'] ?? '').trim();
+  const session = (h['x-shashu-session-id'] ?? '').trim();
+  const caller = (h['x-shashu-caller-agent-id'] ?? '').trim();
   return {
     traceId: trace,
     sessionId: session || undefined,
-    inboundHopDepth: parseHopDepth(h['x-trustgate-hop-depth']),
+    inboundHopDepth: parseHopDepth(h['x-shashu-hop-depth']),
     inboundCallerAgentId: caller || undefined,
   };
 }
@@ -120,7 +120,7 @@ class Tracer {
    */
   constructor() {
     this._gatewayUrl = optionalBaseUrl();
-    this._apiKey = envGet(API_KEY_ENV, API_KEY_ENV_LEGACY);
+    this._apiKey = envGet(API_KEY_ENV);
   }
 
   /**
@@ -187,7 +187,7 @@ class Tracer {
     return a2aStorage.getStore()?.sessionId || undefined;
   }
 
-  /** Advisory inbound hop depth captured from x-trustgate-hop-depth (0 if absent). */
+  /** Advisory inbound hop depth captured from x-shashu-hop-depth (0 if absent). */
   public get inboundHopDepth(): number {
     return a2aStorage.getStore()?.inboundHopDepth ?? 0;
   }
@@ -198,7 +198,7 @@ class Tracer {
     return this.inboundHopDepth + 1;
   }
 
-  /** The captured inbound x-trustgate-caller-agent-id — the upstream agent that INVOKED
+  /** The captured inbound x-shashu-caller-agent-id — the upstream agent that INVOKED
    *  this hop. The SDK FORWARDS this on the outbound gateway call so the gateway records
    *  the real (invoker -> this agent) edge, NEVER this agent's own id (§4.1). undefined at
    *  origin / caller-stripped. */
@@ -209,7 +209,7 @@ class Tracer {
   /**
    * Capture an inbound flow from the headers of a request this agent is SERVING into the
    * AsyncLocalStorage store, so a downstream call made through the SDK propagates the SAME
-   * flow (WP-A2A-4 / ADR-007 §0). Reads (case-insensitively) x-trustgate-trace-id (the flow
+   * flow (WP-A2A-4 / ADR-007 §0). Reads (case-insensitively) x-shashu-trace-id (the flow
    * id), -session-id, -hop-depth, and -caller-agent-id (the upstream INVOKER). The captured
    * trace is PROPAGATED on the next outbound call (never re-minted); the session, inbound hop
    * depth, and inbound caller ride along — the caller is FORWARDED on the gateway call (§4.1),

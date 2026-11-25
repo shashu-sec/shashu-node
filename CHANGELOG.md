@@ -5,6 +5,23 @@ documented here. This project adheres to [Semantic Versioning](https://semver.or
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-25
+
+Apps must move to 1.1.0 to match the current gateway. `TRUSTGATE_*` environment variables are no longer read; use `SHASHU_*`. Busy replies (429/503 with Retry-After) retry by default twice; `max_retries=0` turns that off. Streams are not retried. Key prefix `tg_sk_` is unchanged.
+
+
+Wire names moved to SHASHU (requires a SHASHU gateway); key prefix `tg_sk_` unchanged.
+
+Retries when the gateway says busy (Retry-After + jitter, default 2 retries, configurable).
+
+The one-shot `pass_expired` retry is unchanged and does not stack with busy-retry.
+`x-shashu-hop-ticket` is not sent (never sent in 1.0.0). Planned later.
+
+### Breaking
+
+- Environment variables are `SHASHU_API_KEY` / `SHASHU_BASE_URL` / `SHASHU_DISABLE` only. The `TRUSTGATE_*` fallbacks are removed.
+- Wire names are SHASHU only (`x-shashu-*`, `Shashu-Version`, `shashu_metadata`, body `shashu` / `error.shashu`). Old TrustGate names are neither sent nor read.
+
 ## [1.0.0] — 2026-11-14
 
 Rename and cloud-pass sign-in. Keys (`tg_sk_…`) keep working exactly as before.

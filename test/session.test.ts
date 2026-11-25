@@ -1,7 +1,7 @@
 /**
  * Session at origin. One place — `resolveSessionId` / `buildContextHeaders`.
  *
- * A request that carries no `x-trustgate-session-id` gets one the gateway
+ * A request that carries no `x-shashu-session-id` gets one the gateway
  * derives from the agent id and the first system-or-user message, so every
  * run of an agent whose first message is a static system prompt collapses
  * into ONE Sessions row. Found live in a customer demo.
@@ -40,7 +40,7 @@ function captureHeaders(): { sent: Record<string, string>; restore: () => void }
 
 describe('resolveSessionId — the one place', () => {
   it('a per-request session is an INSTRUCTION that wins over captured and default', () => {
-    tracer.incoming({ 'x-trustgate-trace-id': 'f', 'x-trustgate-session-id': 'captured' }, () => {
+    tracer.incoming({ 'x-shashu-trace-id': 'f', 'x-shashu-session-id': 'captured' }, () => {
       expect(
         resolveSessionId({ defaultSessionId: 'default', requestSessionId: 'per-request' })
       ).toBe('per-request');
@@ -48,7 +48,7 @@ describe('resolveSessionId — the one place', () => {
   });
 
   it('a captured A2A session overrides the construction-time default', () => {
-    tracer.incoming({ 'x-trustgate-trace-id': 'f', 'x-trustgate-session-id': 'captured' }, () => {
+    tracer.incoming({ 'x-shashu-trace-id': 'f', 'x-shashu-session-id': 'captured' }, () => {
       expect(resolveSessionId({ defaultSessionId: 'default' })).toBe('captured');
     });
   });
@@ -63,17 +63,17 @@ describe('resolveSessionId — the one place', () => {
   });
 });
 
-describe('origin request sends x-trustgate-session-id', () => {
+describe('origin request sends x-shashu-session-id', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('a constructed client sends the header at origin', async () => {
     const { sent } = captureHeaders();
     const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'k', retryPolicy: null });
     await tg.fetch(CHAT, { method: 'POST', body: JSON.stringify({ model: 'm', messages: [] }) });
-    expect(sent['x-trustgate-session-id']).toBeDefined();
-    expect(sent['x-trustgate-session-id']).toBe(tg.sessionId);
-    expect(sent['x-trustgate-caller-agent-id']).toBeUndefined();
-    expect(sent['x-trustgate-hop-depth']).toBeUndefined();
+    expect(sent['x-shashu-session-id']).toBeDefined();
+    expect(sent['x-shashu-session-id']).toBe(tg.sessionId);
+    expect(sent['x-shashu-caller-agent-id']).toBeUndefined();
+    expect(sent['x-shashu-hop-depth']).toBeUndefined();
   });
 
   it('one client is one session across two requests', async () => {
@@ -81,7 +81,7 @@ describe('origin request sends x-trustgate-session-id', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_url: string, init: { headers?: Record<string, string> }) => {
-        sessions.push(init.headers?.['x-trustgate-session-id'] ?? '');
+        sessions.push(init.headers?.['x-shashu-session-id'] ?? '');
         return jsonResponse();
       })
     );
@@ -113,7 +113,7 @@ describe('origin request sends x-trustgate-session-id', () => {
       retryPolicy: null,
     });
     await tg.fetch(CHAT, { method: 'POST', body: JSON.stringify({ model: 'm', messages: [] }) });
-    expect(sent['x-trustgate-session-id']).toBe('sess-explicit');
+    expect(sent['x-shashu-session-id']).toBe('sess-explicit');
     expect(tg.sessionId).toBe('sess-explicit');
   });
 
@@ -122,7 +122,7 @@ describe('origin request sends x-trustgate-session-id', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_url: string, init: { headers?: Record<string, string> }) => {
-        sessions.push(init.headers?.['x-trustgate-session-id'] ?? '');
+        sessions.push(init.headers?.['x-shashu-session-id'] ?? '');
         return jsonResponse();
       })
     );
@@ -148,7 +148,7 @@ describe('origin request sends x-trustgate-session-id', () => {
       retryPolicy: null,
     });
     await tracer.incoming(
-      { 'x-trustgate-trace-id': 'flow', 'x-trustgate-session-id': 'a2a-sess' },
+      { 'x-shashu-trace-id': 'flow', 'x-shashu-session-id': 'a2a-sess' },
       async () => {
         await tg.fetch(CHAT, {
           method: 'POST',
@@ -156,7 +156,7 @@ describe('origin request sends x-trustgate-session-id', () => {
         });
       }
     );
-    expect(sent['x-trustgate-session-id']).toBe('a2a-sess');
+    expect(sent['x-shashu-session-id']).toBe('a2a-sess');
     expect(tg.sessionId).toBe('client-default');
   });
 
@@ -169,7 +169,7 @@ describe('origin request sends x-trustgate-session-id', () => {
       retryPolicy: null,
     });
     await tracer.incoming(
-      { 'x-trustgate-trace-id': 'flow', 'x-trustgate-session-id': 'a2a-sess' },
+      { 'x-shashu-trace-id': 'flow', 'x-shashu-session-id': 'a2a-sess' },
       async () => {
         await tg.fetch(
           CHAT,
@@ -178,7 +178,7 @@ describe('origin request sends x-trustgate-session-id', () => {
         );
       }
     );
-    expect(sent['x-trustgate-session-id']).toBe('per-request');
+    expect(sent['x-shashu-session-id']).toBe('per-request');
   });
 });
 
@@ -191,7 +191,7 @@ describe('shashuFetch mints one session at construction', () => {
       sessionId: undefined,
       fetch: async (_input, init) => {
         const h = (init?.headers ?? {}) as Record<string, string>;
-        sessions.push(h['x-trustgate-session-id']);
+        sessions.push(h['x-shashu-session-id']);
         return jsonResponse();
       },
     });
@@ -206,7 +206,7 @@ describe('shashuFetch mints one session at construction', () => {
 describe('buildContextHeaders without a default still omits session at origin', () => {
   it('standalone header build does not mint', () => {
     const h = buildContextHeaders(getWorkflowContextFromEnv());
-    expect(h['x-trustgate-session-id']).toBeUndefined();
+    expect(h['x-shashu-session-id']).toBeUndefined();
   });
 });
 
@@ -230,9 +230,9 @@ describe('buildInvocationHeaders resolves the session in one place', () => {
 
   it('a per-request session is an INSTRUCTION and beats a captured hop', () => {
     tracer.captureIncoming({
-      'x-trustgate-trace-id': 'trace-from-the-hop',
-      'x-trustgate-session-id': 'captured-from-the-hop',
-      'x-trustgate-hop-depth': '1',
+      'x-shashu-trace-id': 'trace-from-the-hop',
+      'x-shashu-session-id': 'captured-from-the-hop',
+      'x-shashu-hop-depth': '1',
     });
 
     const headers = buildInvocationHeaders({
@@ -240,24 +240,24 @@ describe('buildInvocationHeaders resolves the session in one place', () => {
       sessionId: 'the-callers-instruction',
     });
 
-    expect(headers['x-trustgate-session-id']).toBe('the-callers-instruction');
+    expect(headers['x-shashu-session-id']).toBe('the-callers-instruction');
   });
 
   it('a captured hop is used when the caller passed none', () => {
     tracer.captureIncoming({
-      'x-trustgate-trace-id': 'trace-from-the-hop',
-      'x-trustgate-session-id': 'captured-from-the-hop',
-      'x-trustgate-hop-depth': '1',
+      'x-shashu-trace-id': 'trace-from-the-hop',
+      'x-shashu-session-id': 'captured-from-the-hop',
+      'x-shashu-hop-depth': '1',
     });
 
     const headers = buildInvocationHeaders({ callerAgentId: 'agent-a' });
 
-    expect(headers['x-trustgate-session-id']).toBe('captured-from-the-hop');
+    expect(headers['x-shashu-session-id']).toBe('captured-from-the-hop');
   });
 
   it('no session anywhere emits no session header — it is not minted here', () => {
     const headers = buildInvocationHeaders({ callerAgentId: 'agent-a' });
 
-    expect(headers['x-trustgate-session-id']).toBeUndefined();
+    expect(headers['x-shashu-session-id']).toBeUndefined();
   });
 });

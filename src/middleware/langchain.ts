@@ -55,7 +55,7 @@
  *   `handleLLMStart`, which run inline in the model step's own async context --
  *   the same context the HTTP call is made in. Delivery calls
  *   {@link declareRetrieval}, so the caps, the coercion table and
- *   `TRUSTGATE_DISABLE` are the one implementation shared with the manual path.
+ *   `SHASHU_DISABLE` are the one implementation shared with the manual path.
  *
  * `install()` also has to force a `CallbackManager` to exist at all:
  * `CallbackManager.configure()` returns `undefined` when a chain is invoked with
@@ -91,10 +91,10 @@ import { declareRetrieval, type RagContext, type RagDoc } from '../rag.js';
 /**
  * Configuration to pass to LangChain's ChatOpenAI (or other OpenAI-based classes).
  * Sets baseURL and defaultHeaders (lowercase keys) so requests go through Shashu
- * with workflow context and x-trustgate-source-tool JSON for Shadow AI detection,
+ * with workflow context and x-shashu-source-tool JSON for Shadow AI detection,
  * and a `fetch` that attaches any declared retrieval to the outgoing body.
  *
- * Returns `{}` when TRUSTGATE_DISABLE is set: the provider client is then left
+ * Returns `{}` when SHASHU_DISABLE is set: the provider client is then left
  * exactly as it was — its own endpoint, its own credential, no Shashu context
  * headers — which is the same no-op the Python SDK's patchers perform. The
  * caller's tg_sk_ key is deliberately NOT handed back, since it would be sent to

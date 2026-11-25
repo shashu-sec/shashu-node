@@ -55,7 +55,7 @@ beforeEach(() => {
 
 afterEach(() => {
   clear();
-  delete process.env.TRUSTGATE_DISABLE;
+  delete process.env.SHASHU_DISABLE;
 });
 
 describe('(c) a plain SDK plus declareRetrieval()', () => {
@@ -123,7 +123,7 @@ describe('(c) a plain SDK plus declareRetrieval()', () => {
 });
 
 describe('(d) negative: nothing was declared', () => {
-  it('sends no trustgate_metadata at all', async () => {
+  it('sends no shashu_metadata at all', async () => {
     await ask(client(), 'no retrieval happened here');
     expect(gateway.requests).toHaveLength(1);
     expect(gateway.bare()).toBe(true);
@@ -140,9 +140,9 @@ describe('(d) negative: nothing was declared', () => {
   });
 });
 
-describe('(f) TRUSTGATE_DISABLE=1', () => {
+describe('(f) SHASHU_DISABLE=1', () => {
   it('makes declareRetrieval and the joiner both inert', async () => {
-    process.env.TRUSTGATE_DISABLE = '1';
+    process.env.SHASHU_DISABLE = '1';
     declareRetrieval([{ id: 'D', text: nonce('disabled') }], { corpus: 'c' });
 
     // The middleware returns {} when disabled, so build the client the way a

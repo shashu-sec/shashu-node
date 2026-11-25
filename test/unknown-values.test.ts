@@ -35,11 +35,11 @@ const ENVELOPE = {
 };
 
 const HEADERS = {
-  'x-trustgate-decision': 'refuse',
-  'x-trustgate-code': 'made_up_code_zz',
-  'x-trustgate-attachments': 'total=1;blocked=1;made_up=2',
-  'x-trustgate-memory': 'writes=1;made_up=2',
-  'x-trustgate-made-up-header': 'zz',
+  'x-shashu-decision': 'refuse',
+  'x-shashu-code': 'made_up_code_zz',
+  'x-shashu-attachments': 'total=1;blocked=1;made_up=2',
+  'x-shashu-memory': 'writes=1;made_up=2',
+  'x-shashu-made-up-header': 'zz',
 };
 
 function stub(status: number, payload: unknown, hdrs: Record<string, string> = {}) {
@@ -65,16 +65,13 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('made-up values are read, not thrown on', () => {
   it('decisionFrom reads a made-up code, reason, field and state', () => {
-    const d = decisionFrom({ error: { message: 'm', trustgate: ENVELOPE } }, HEADERS);
+    const d = decisionFrom({ error: { message: 'm', shashu: ENVELOPE } }, HEADERS);
     expect(d?.decision).toBe('refuse');
     expect(d?.code).toBe('made_up_code_zz');
   });
 
   it('a made-up decision is still a block', () => {
-    const d = decisionFrom(
-      { trustgate: { ...ENVELOPE, decision: 'made_up_decision_zz' } },
-      undefined
-    );
+    const d = decisionFrom({ shashu: { ...ENVELOPE, decision: 'made_up_decision_zz' } }, undefined);
     expect(d?.decision).toBe('block');
     expect(d?.rawDecision).toBe('made_up_decision_zz');
   });
@@ -87,7 +84,7 @@ describe('made-up values are read, not thrown on', () => {
           message: 'm',
           type: 'permission_error',
           code: 'made_up_code_zz',
-          trustgate: ENVELOPE,
+          shashu: ENVELOPE,
         },
       },
       HEADERS
@@ -113,10 +110,10 @@ describe('made-up values are read, not thrown on', () => {
         choices: [
           { index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' },
         ],
-        trustgate: { ...ENVELOPE, decision: 'allow' },
+        shashu: { ...ENVELOPE, decision: 'allow' },
         made_up_body_field: { x: 1 },
       },
-      { ...HEADERS, 'x-trustgate-decision': 'allow' }
+      { ...HEADERS, 'x-shashu-decision': 'allow' }
     );
     const res = await client().fetch('/v1/chat/completions', REQ);
     expect(shashuDecision(res)?.code).toBe('made_up_code_zz');
