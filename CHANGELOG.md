@@ -5,10 +5,13 @@ documented here. This project adheres to [Semantic Versioning](https://semver.or
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-11-25
+
+Fixed: when the gateway was busy and the SDK retried, the retry could be sent
+without the retrieval declaration. The request (body, headers, and
+`shashu_metadata`) is now built once per logical call and only re-sent.
+
 ## [1.1.0] — 2026-11-25
-
-Apps must move to 1.1.0 to match the current gateway. `TRUSTGATE_*` environment variables are no longer read; use `SHASHU_*`. Busy replies (429/503 with Retry-After) retry by default twice; `max_retries=0` turns that off. Streams are not retried. Key prefix `tg_sk_` is unchanged.
-
 
 Wire names moved to SHASHU (requires a SHASHU gateway); key prefix `tg_sk_` unchanged.
 

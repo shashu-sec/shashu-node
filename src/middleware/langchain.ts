@@ -79,7 +79,8 @@ import {
   buildContextHeaders,
   applyContractVersion,
 } from '../context.js';
-import { withRetrievalJoiner, type FetchLike } from '../_joiner.js';
+import { pinOutgoing, type FetchLike } from '../_joiner.js';
+import { executeWithRetry, resolveRetryPolicy } from '../retry.js';
 import {
   CredentialResolver,
   passRefusalCodeFromText,
@@ -126,12 +127,21 @@ export function createShashuLangChainConfig(config: ShashuConfig): {
     ...buildContextHeaders(ctx, { defaultSessionId: config.sessionId ?? randomUUID() }),
   };
   applyContractVersion(headers, config.contractVersion);
-  const joining = withRetrievalJoiner();
   const fetch: FetchLike = async (input, init) => {
-    const token = await resolver.get();
-    const next = new Headers(init?.headers);
-    if (token) next.set('authorization', `Bearer ${token}`);
-    const res = await joining(input, { ...init, headers: next });
+    const baseHeaders = new Headers(init?.headers);
+    baseHeaders.delete('authorization');
+    const headerObj: Record<string, string> = {};
+    baseHeaders.forEach((v, k) => {
+      headerObj[k] = v;
+    });
+    const pinned = pinOutgoing(input, { ...init, headers: headerObj });
+    const send = async (): Promise<Response> => {
+      const token = await resolver.get();
+      const headers = { ...((pinned.init?.headers as Record<string, string>) || {}) };
+      if (token) headers.authorization = `Bearer ${token}`;
+      return globalThis.fetch(pinned.input, { ...pinned.init, headers });
+    };
+    const res = await executeWithRetry(send, resolveRetryPolicy(config.retryPolicy));
     if (!resolver.usesProvider || res.status !== 401) return res;
     const code = passRefusalCodeFromText(await res.clone().text());
     if (
@@ -145,9 +155,7 @@ export function createShashuLangChainConfig(config: ShashuConfig): {
       return res;
     }
     resolver.invalidate();
-    const retryToken = await resolver.get();
-    if (retryToken) next.set('authorization', `Bearer ${retryToken}`);
-    return joining(input, { ...init, headers: next });
+    return send();
   };
 
   return {

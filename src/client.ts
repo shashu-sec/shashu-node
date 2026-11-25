@@ -16,7 +16,7 @@ import {
   ShashuContentFilterError,
 } from './exceptions.js';
 import { executeWithRetry, resolveRetryPolicy, type RetryPolicy } from './retry.js';
-import { withRetrievalJoiner } from './_joiner.js';
+import { pinOutgoing, withRetrievalJoiner } from './_joiner.js';
 import { decisionFromResponse, rememberDecision } from './decision.js';
 import {
   CredentialResolver,
@@ -220,28 +220,33 @@ export class Shashu {
       : `${this.resolvedBaseUrl}/${path.replace(/^\//, '')}`;
     const timeout = options?.timeout ?? 60_000;
 
-    // Each attempt gets a fresh AbortController/timeout so retries aren't aborted.
-    const send = async (): Promise<Response> => {
-      const token = await this.resolver.get();
-      const headers = mergeHeaders(
-        this.config,
-        options,
-        context,
-        {
+    const headersOnce = applyContractVersion(
+      {
+        ...mergeHeaders(this.config, options, context, {
           defaultSessionId: this._sessionId,
           requestSessionId: options?.sessionId,
-        },
-        token
-      );
+        }),
+        ...(init.headers as Record<string, string>),
+      },
+      this.config.contractVersion
+    );
+    const frozenHeaders: Record<string, string> = { ...headersOnce };
+    delete frozenHeaders['authorization'];
+    delete frozenHeaders['Authorization'];
+    const pinned = pinOutgoing(url, { ...init, headers: frozenHeaders });
+
+    // Each attempt gets a fresh AbortController/timeout so retries aren't aborted.
+    // Body and headers were built once; only Authorization is overlaid.
+    const send = async (): Promise<Response> => {
+      const token = await this.resolver.get();
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeout);
       try {
-        return await joiningFetch(url, {
-          ...init,
-          headers: applyContractVersion(
-            { ...headers, ...(init.headers as Record<string, string>) },
-            this.config.contractVersion
-          ),
+        const headers = { ...(pinned.init?.headers as Record<string, string>) };
+        if (token) headers['authorization'] = `Bearer ${token}`;
+        return await joiningFetch(pinned.input, {
+          ...pinned.init,
+          headers,
           signal: init.signal ?? controller.signal,
         });
       } finally {

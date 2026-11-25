@@ -176,6 +176,28 @@ function takeContextFor(body: Record<string, unknown>): Record<string, unknown> 
  * Never throws on the SDK's behalf: any failure to understand a request means
  * that request goes out exactly as the caller built it.
  */
+/** Consume the bus once and return init whose body already carries the declaration. */
+export function pinOutgoing(input: any, init?: any): { input: any; init: any } {
+  if (!hasEvents()) return { input, init };
+  if (isDisabled()) {
+    clear();
+    return { input, init };
+  }
+  const body = parseJsonObject(init?.body);
+  if (body === undefined) return { input, init };
+  const merged = takeContextFor(body);
+  if (merged === undefined) return { input, init };
+  const encoded = JSON.stringify(merged);
+  return {
+    input,
+    init: {
+      ...init,
+      body: encoded,
+      headers: fixContentLength(init?.headers, byteLength(encoded)),
+    },
+  };
+}
+
 export function withRetrievalJoiner(underlying: FetchLike = globalFetch): FetchLike {
   return async function trustgateJoiningFetch(input: any, init?: any): Promise<Response> {
     // The zero-cost guard: one getStore(), before anything is touched.
