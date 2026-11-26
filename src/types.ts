@@ -104,7 +104,7 @@ export interface ShashuConfig {
    * ShashuConfigError, never a vendor host. See ./config.ts.
    */
   baseUrl?: string;
-  /** API key (e.g. tg_sk_...). Sent as Authorization: Bearer <apiKey>; gateway handles provider routing. */
+  /** API key (e.g. shashu_sk_...). Sent as Authorization: Bearer <apiKey>; gateway handles provider routing. */
   apiKey?: string;
   /**
    * Callable returning the current cloud pass (string or Promise). Mutually

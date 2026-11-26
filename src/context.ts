@@ -10,7 +10,7 @@ export const SOURCE_TOOL_HEADER = 'x-shashu-source-tool';
 
 /**
  * The contract generation this SDK speaks, declared on every request — the
- * same value the Python SDK sends (`trustgate.context.DEFAULT_CONTRACT_VERSION`).
+ * same value the Python SDK sends (`shashu.context.DEFAULT_CONTRACT_VERSION`).
  *
  * The gateway resolves an ABSENT `shashu-version` header to its legacy
  * contract: a refusal is a 200 with prose in `message.content`, the body

@@ -2,7 +2,7 @@
  * Shashu SDK exception hierarchy (mirrors the Python SDK).
  *
  * Every shape named below is a verbatim capture from a running gateway, taken
- * with `sdks/e2e/capture_error_contract.py` in the trustgate-ai repo. That
+ * with `sdks/e2e/capture_error_contract.py` in the gateway repo. That
  * harness is the source of truth for this module; a claim that cannot be
  * reproduced with it does not belong here. The previous version of this header
  * was derived from an investigation write-up and got three things wrong — see
@@ -38,11 +38,11 @@
  * not the discriminator this module once called it.
  *
  * **A 401 is not always about your key.** The gateway's own auth failure sends
- * `type="invalid_request_error"` with message `"Invalid TrustGate API Key"` or
+ * `type="invalid_request_error"` with message `"Invalid SHASHU API Key"` or
  * `"Not authenticated"` (the latter with a `WWW-Authenticate: Bearer` header).
  * A 401 carrying `type="authentication_error"` and a message prefixed
- * `"TrustGate Provider Error: "` is a **pass-through**: the gateway's own stored
- * provider credential was rejected upstream. Your `tg_sk_` key is fine and
+ * `"SHASHU Provider Error: "` is a **pass-through**: the gateway's own stored
+ * provider credential was rejected upstream. Your `shashu_sk_` key is fine and
  * rotating it changes nothing — a gateway operator has to fix the provider
  * secret. The same is true of 403 (`ProviderPermissionError`), 404, 429 and the
  * 5xx family. This module used to attribute `authentication_error` to the
@@ -65,7 +65,7 @@
  * still exported so existing `catch` clauses type-check, but nothing throws it —
  * every 403 is a `ShashuPolicyViolation`. Catch `ShashuPermissionError` to
  * cover both. It becomes reachable again if the gateway ships a real
- * discriminator (ticket TRUSTGATE-403-DISCRIMINATOR).
+ * discriminator (the 403 discriminator ticket).
  *
  * `ShashuError` remains the base (re-exported from "./types.js" for
  * backward compatibility), so existing `catch (e) { e instanceof ShashuError }`
@@ -91,7 +91,7 @@ type ErrorDetails = {
  * harness; the gateway builds it in one place (`proxy/processor.py`) for the
  * whole provider-error family.
  */
-const PROVIDER_ERROR_PREFIX = 'TrustGate Provider Error:';
+const PROVIDER_ERROR_PREFIX = 'SHASHU Provider Error:';
 
 /**
  * The SDK was asked to instrument or address a process it cannot address.
@@ -124,11 +124,11 @@ export class ShashuConfigError extends ShashuError {
  * Two different producers land here and they need opposite fixes:
  *
  *  - the **gateway's own** agent-key check — missing, unknown, deactivated or
- *    rotated `tg_sk_` key. `type="invalid_request_error"`, message
- *    `"Invalid TrustGate API Key"` or `"Not authenticated"`. Fix: your key.
+ *    rotated `shashu_sk_` key. `type="invalid_request_error"`, message
+ *    `"Invalid SHASHU API Key"` or `"Not authenticated"`. Fix: your key.
  *  - a **provider pass-through** — the gateway's stored provider credential was
  *    rejected upstream. `type="authentication_error"`, message prefixed
- *    `"TrustGate Provider Error: "`. Your key is fine; rotating it changes
+ *    `"SHASHU Provider Error: "`. Your key is fine; rotating it changes
  *    nothing. Fix: a gateway operator replaces the provider secret.
  *
  * {@link isProviderPassthrough} tells them apart.
@@ -210,8 +210,8 @@ export class ShashuPermissionError extends ShashuError {
  * Kept exported so existing `catch` clauses still type-check. Catch
  * {@link ShashuPermissionError} to cover budget and policy together. This
  * class becomes reachable again if the gateway ships a real discriminator
- * (ticket TRUSTGATE-403-DISCRIMINATOR,
- * https://github.com/aisquad001/trustgate-ai/issues/736).
+ * (the 403 discriminator ticket,
+ * the gateway issue tracker (403 discriminator)).
  */
 export class ShashuBudgetExceededError extends ShashuPermissionError {
   constructor(message: string, status: number, body?: unknown, details?: ErrorDetails) {

@@ -47,7 +47,7 @@
  * the gateway truncates at today, because that mismatch is a gateway-side defect
  * tracked separately and the SDK speaks the contract.
  *
- * Sibling of the Python SDK's `trustgate/_bus.py`.
+ * Sibling of the Python SDK's `shashu/_bus.py`.
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';

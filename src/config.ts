@@ -1,7 +1,7 @@
 /**
  * Gateway address resolution and the SDK kill switch.
  *
- * From 1.1.0 the SDK reads only `SHASHU_*` names. `TRUSTGATE_*` is ignored.
+ * From 1.1.0 the SDK reads only `SHASHU_*` names. The old environment-variable names are no longer read.
  */
 
 import { ShashuConfigError } from './exceptions.js';

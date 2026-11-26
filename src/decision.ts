@@ -479,10 +479,10 @@ type DecisionFields = {
   carrierDisagreement: Record<string, [unknown, unknown]>;
 };
 
-const SOURCE = Symbol('trustgate.decision.blocks');
-const ATTACHMENTS = Symbol('trustgate.decision.attachments');
-const MEMORY = Symbol('trustgate.decision.memory');
-const UNREAD = Symbol('trustgate.decision.unread');
+const SOURCE = Symbol('shashu.decision.blocks');
+const ATTACHMENTS = Symbol('shashu.decision.attachments');
+const MEMORY = Symbol('shashu.decision.memory');
+const UNREAD = Symbol('shashu.decision.unread');
 
 /**
  * One decision. A class, not an object literal with getters: a literal pays

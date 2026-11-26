@@ -98,7 +98,7 @@ import { declareRetrieval, type RagContext, type RagDoc } from '../rag.js';
  * Returns `{}` when SHASHU_DISABLE is set: the provider client is then left
  * exactly as it was — its own endpoint, its own credential, no Shashu context
  * headers — which is the same no-op the Python SDK's patchers perform. The
- * caller's tg_sk_ key is deliberately NOT handed back, since it would be sent to
+ * caller's shashu_sk_ key is deliberately NOT handed back, since it would be sent to
  * the provider directly.
  *
  * @throws {ShashuConfigError} when no address is configured and the SDK is
@@ -230,7 +230,7 @@ interface Capture {
 const captured = new Map<string, Capture[]>();
 
 /** Where `handleRetrieverStart` parks the query for `handleRetrieverEnd`. */
-const QUERY = Symbol.for('trustgate.langchain.query');
+const QUERY = Symbol.for('shashu.langchain.query');
 
 let enabled = false;
 let patched = false;

@@ -78,7 +78,7 @@ export function getShashuHeaders(
  * Returns `{}` when SHASHU_DISABLE is set: the provider client is then left
  * exactly as it was — its own endpoint, its own credential, no Shashu context
  * headers — which is the same no-op the Python SDK's patchers perform. The
- * caller's tg_sk_ key is deliberately NOT handed back, since it would be sent to
+ * caller's shashu_sk_ key is deliberately NOT handed back, since it would be sent to
  * the provider directly.
  *
  * @throws {ShashuConfigError} when no address is configured and the SDK is

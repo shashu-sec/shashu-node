@@ -57,7 +57,7 @@ afterEach(() => {
 const REQUIRING_SITES: Array<[string, (baseUrl?: string) => { baseUrl?: string }]> = [
   [
     'new Shashu()',
-    (baseUrl) => ({ baseUrl: new Shashu({ apiKey: 'tg_sk_not_a_real_key', baseUrl }).baseUrl }),
+    (baseUrl) => ({ baseUrl: new Shashu({ apiKey: 'shashu_sk_not_a_real_key', baseUrl }).baseUrl }),
   ],
   [
     'createShashuAnthropicConfig()',
@@ -91,7 +91,7 @@ describe('ShashuConfigError', () => {
 
   it('survives the prototype dance, so instanceof works across bundles', () => {
     try {
-      new Shashu({ apiKey: 'tg_sk_not_a_real_key' });
+      new Shashu({ apiKey: 'shashu_sk_not_a_real_key' });
       expect.unreachable('expected a ShashuConfigError');
     } catch (e) {
       expect(e).toBeInstanceOf(ShashuConfigError);
@@ -182,7 +182,7 @@ describe('tracer', () => {
     const fetchSpy = vi.fn();
     globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
 
-    tracer.configure({ apiKey: 'tg_sk_not_a_real_key' });
+    tracer.configure({ apiKey: 'shashu_sk_not_a_real_key' });
     await tracer.span('unit-test-span', async () => {});
     await tracer.flush();
 
@@ -209,10 +209,10 @@ describe('tracer', () => {
 
 describe('SHASHU_DISABLE=1', () => {
   const MIDDLEWARES: Array<[string, () => Record<string, unknown>]> = [
-    ['createShashuAnthropicConfig()', () => createShashuAnthropicConfig({ apiKey: 'tg_sk_x' })],
-    ['createShashuGeminiConfig()', () => createShashuGeminiConfig({ apiKey: 'tg_sk_x' })],
-    ['createShashuLangChainConfig()', () => createShashuLangChainConfig({ apiKey: 'tg_sk_x' })],
-    ['createShashuOpenAIOptions()', () => createShashuOpenAIOptions({ apiKey: 'tg_sk_x' })],
+    ['createShashuAnthropicConfig()', () => createShashuAnthropicConfig({ apiKey: 'shashu_sk_x' })],
+    ['createShashuGeminiConfig()', () => createShashuGeminiConfig({ apiKey: 'shashu_sk_x' })],
+    ['createShashuLangChainConfig()', () => createShashuLangChainConfig({ apiKey: 'shashu_sk_x' })],
+    ['createShashuOpenAIOptions()', () => createShashuOpenAIOptions({ apiKey: 'shashu_sk_x' })],
   ];
 
   it.each(MIDDLEWARES)('%s returns cleanly with no address configured at all', (_name, call) => {
@@ -227,7 +227,7 @@ describe('SHASHU_DISABLE=1', () => {
       process.env.SHASHU_BASE_URL = 'https://gw.invalid';
 
       // A disabled SDK leaves the provider client exactly as it was: no base URL
-      // override, no Shashu context headers, and NOT the caller's tg_sk_ key
+      // override, no Shashu context headers, and NOT the caller's shashu_sk_ key
       // (which would then be sent to the provider directly).
       expect(call()).toEqual({});
     }
@@ -240,12 +240,12 @@ describe('SHASHU_DISABLE=1', () => {
     ['uppercase TRUE', 'TRUE'],
   ])('accepts %s as off, because platform tooling emits it', (_label, value) => {
     process.env.SHASHU_DISABLE = value;
-    expect(createShashuAnthropicConfig({ apiKey: 'tg_sk_x' })).toEqual({});
+    expect(createShashuAnthropicConfig({ apiKey: 'shashu_sk_x' })).toEqual({});
   });
 
   it('does not read an unrelated value as off', () => {
     process.env.SHASHU_DISABLE = '0';
-    expect(() => createShashuAnthropicConfig({ apiKey: 'tg_sk_x' })).toThrow(ShashuConfigError);
+    expect(() => createShashuAnthropicConfig({ apiKey: 'shashu_sk_x' })).toThrow(ShashuConfigError);
   });
 
   it('stops the tracer flushing even with an address and a key', async () => {
@@ -256,7 +256,7 @@ describe('SHASHU_DISABLE=1', () => {
     const fetchSpy = vi.fn();
     globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
 
-    tracer.configure({ apiKey: 'tg_sk_not_a_real_key' });
+    tracer.configure({ apiKey: 'shashu_sk_not_a_real_key' });
     await tracer.span('unit-test-span', async () => {});
     await tracer.flush();
 
@@ -280,7 +280,7 @@ describe('SHASHU_DISABLE=1', () => {
     // "send this to my gateway" and there is nothing for it to no-op INTO, so
     // it still refuses an unnamed address rather than silently doing nothing.
     process.env.SHASHU_DISABLE = '1';
-    expect(() => new Shashu({ apiKey: 'tg_sk_not_a_real_key' })).toThrow(ShashuConfigError);
+    expect(() => new Shashu({ apiKey: 'shashu_sk_not_a_real_key' })).toThrow(ShashuConfigError);
   });
 });
 

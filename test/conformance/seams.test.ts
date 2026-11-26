@@ -57,7 +57,7 @@ function expectCarried(canary: string): void {
 describe('middlewares with a fetch seam', () => {
   it("Shashu's own client", async () => {
     const canary = nonce('client');
-    const tg = new Shashu({ baseUrl: `${GATEWAY}`, apiKey: 'tg_sk_test' });
+    const tg = new Shashu({ baseUrl: `${GATEWAY}`, apiKey: 'shashu_sk_test' });
     declareRetrieval([{ id: 'D', text: canary }], { corpus: 'c' });
     await tg.fetch('/v1/chat/completions', {
       method: 'POST',
@@ -77,7 +77,7 @@ describe('middlewares with a fetch seam', () => {
 
   it("anthropic: the client's own fetch option", async () => {
     const canary = nonce('anthropic-seam');
-    const config = createShashuAnthropicConfig({ baseUrl: GATEWAY, apiKey: 'tg_sk_test' });
+    const config = createShashuAnthropicConfig({ baseUrl: GATEWAY, apiKey: 'shashu_sk_test' });
     expect(config.fetch).toBeTypeOf('function');
     declareRetrieval([{ id: 'D', text: canary }], { corpus: 'c' });
     await new Anthropic({ apiKey: 'k', ...config }).messages.create({
@@ -91,7 +91,10 @@ describe('middlewares with a fetch seam', () => {
 
   it("vercel-ai: the provider factory's fetch option", async () => {
     const canary = nonce('vercel-seam');
-    const options = createShashuOpenAIOptions({ baseUrl: `${GATEWAY}/v1`, apiKey: 'tg_sk_test' });
+    const options = createShashuOpenAIOptions({
+      baseUrl: `${GATEWAY}/v1`,
+      apiKey: 'shashu_sk_test',
+    });
     expect(options.fetch).toBeTypeOf('function');
     const openai = createOpenAI({
       apiKey: 'k',
@@ -106,7 +109,10 @@ describe('middlewares with a fetch seam', () => {
 
   it('vercel-ai: the plain openai SDK built from the same options', async () => {
     const canary = nonce('openai-seam');
-    const options = createShashuOpenAIOptions({ baseUrl: `${GATEWAY}/v1`, apiKey: 'tg_sk_test' });
+    const options = createShashuOpenAIOptions({
+      baseUrl: `${GATEWAY}/v1`,
+      apiKey: 'shashu_sk_test',
+    });
     const client = new OpenAI({ apiKey: 'k', baseURL: options.baseURL, fetch: options.fetch });
     declareRetrieval([{ id: 'D', text: canary }], { corpus: 'c' });
     await client.chat.completions.create({ model: 'gpt-4o-mini', messages: [] });
@@ -116,7 +122,7 @@ describe('middlewares with a fetch seam', () => {
 
 describe('google: no seam exists, so this path is declaration-only', () => {
   it('hands back no fetch, because @google/generative-ai takes none', () => {
-    const config = createShashuGeminiConfig({ baseUrl: GATEWAY, apiKey: 'tg_sk_test' });
+    const config = createShashuGeminiConfig({ baseUrl: GATEWAY, apiKey: 'shashu_sk_test' });
     expect(config).not.toHaveProperty('fetch');
     expect(Object.keys(config).sort()).toEqual(['apiKey', 'baseUrl', 'headers']);
   });

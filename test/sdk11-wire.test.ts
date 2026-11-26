@@ -41,7 +41,7 @@ describe('SDK 1.1.0 SHASHU wire names', () => {
     });
     const tg = new Shashu({
       baseUrl: 'https://gw.example',
-      apiKey: 'tg_sk_test',
+      apiKey: 'shashu_sk_test',
       retryPolicy: null,
     });
     await tg.fetch('/v1/chat/completions', { method: 'POST', body: '{}' });
@@ -102,7 +102,7 @@ describe('SDK 1.1.0 SHASHU wire names', () => {
     });
     const tg = new Shashu({
       baseUrl: 'https://gw.example',
-      apiKey: 'tg_sk_test',
+      apiKey: 'shashu_sk_test',
       retryPolicy: null,
     });
     await tg.fetch('/v1/chat/completions', {
@@ -120,17 +120,21 @@ describe('SDK 1.1.0 SHASHU wire names', () => {
     expect(parsed.trustgate_metadata).toBeUndefined();
   });
 
-  it('(e) tg_sk_ keys work and both-or-neither text is exact', () => {
+  it('(e) shashu_sk_ keys work and both-or-neither text is exact', () => {
     expect(BOTH_OR_NEITHER).toBe('Give either a SHASHU key or a token provider, not both.');
     expect(
       () =>
         new Shashu({
           baseUrl: 'http://127.0.0.1:9',
-          apiKey: 'tg_sk_x',
+          apiKey: 'shashu_sk_x',
           tokenProvider: () => 'p',
         })
     ).toThrow(BOTH_OR_NEITHER);
-    const tg = new Shashu({ baseUrl: 'http://127.0.0.1:9', apiKey: 'tg_sk_x', retryPolicy: null });
+    const tg = new Shashu({
+      baseUrl: 'http://127.0.0.1:9',
+      apiKey: 'shashu_sk_x',
+      retryPolicy: null,
+    });
     expect(tg).toBeTruthy();
   });
 });

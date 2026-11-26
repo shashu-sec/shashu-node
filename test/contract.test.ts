@@ -15,7 +15,7 @@ import { SOURCES } from '../src/rag.js';
 import { SCHEMA, SCHEMA_BYTES } from './helpers/gateway.js';
 
 /** contracts/rag_context.v1.schema.json in the gateway repo, at v1. */
-const DIGEST = '25894f3aedbfe96e7e1cdd12ab56d1a316eed8b8fb4dcad603ed4c0d67574fee';
+const DIGEST = '4cf08786149c40c3a046787f5bcbf1cde9e780bb25008a0abbc894237c8a4b3f';
 
 describe('rag_context.v1 contract', () => {
   it("is the gateway's file byte for byte", () => {

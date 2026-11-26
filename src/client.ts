@@ -24,7 +24,7 @@ import {
   shouldRetryPassRefused,
 } from './credential.js';
 
-const USER_AGENT = `trustgate-node/${SDK_VERSION}`;
+const USER_AGENT = `shashu-node/${SDK_VERSION}`;
 
 /**
  * Every request this client sends goes through the retrieval joiner, so a
@@ -49,7 +49,7 @@ function warnStreamingInert(): void {
   streamingInertWarningEmitted = true;
   // eslint-disable-next-line no-console
   console.warn(
-    '[trustgate] Streaming is not yet supported end-to-end: the gateway buffers ' +
+    '[shashu] Streaming is not yet supported end-to-end: the gateway buffers ' +
       '/v1/chat/completions and returns full JSON regardless of the `stream` flag, so no ' +
       'incremental tokens are produced. fetchStream() will fall back to the buffered response. ' +
       '(warned once per process)'
@@ -99,7 +99,7 @@ function mergeHeaders(
 
 /**
  * Shashu Node.js client. All traffic is sent to the Shashu gateway with
- * Bearer auth (tg_sk_...). The gateway routes to OpenAI/Anthropic based on
+ * Bearer auth (shashu_sk_...). The gateway routes to OpenAI/Anthropic based on
  * the `model` field in the request body.
  */
 export class Shashu {

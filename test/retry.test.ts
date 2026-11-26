@@ -51,13 +51,25 @@ function ok(): Response {
 const policy = (over: Partial<RetryPolicy> = {}) => resolveRetryPolicy(over) as RetryPolicy;
 const noopSleep = async () => {};
 
+function refused(): TypeError {
+  const err = new TypeError('fetch failed');
+  (err as Error & { cause: { code: string } }).cause = { code: 'ECONNREFUSED' };
+  return err;
+}
+
+function resetAfterSend(): TypeError {
+  const err = new TypeError('fetch failed');
+  (err as Error & { cause: { code: string } }).cause = { code: 'ECONNRESET' };
+  return err;
+}
+
 describe('executeWithRetry (unit)', () => {
   it('retries connection errors then succeeds (exponential backoff)', async () => {
     const sleeps: number[] = [];
     const send = vi
       .fn()
-      .mockRejectedValueOnce(new TypeError('fetch failed'))
-      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockRejectedValueOnce(refused())
+      .mockRejectedValueOnce(refused())
       .mockResolvedValueOnce(ok());
     const res = await executeWithRetry(send, policy(), async (s) => {
       sleeps.push(s);
@@ -72,7 +84,7 @@ describe('executeWithRetry (unit)', () => {
   });
 
   it('exhausts connection retries then rethrows', async () => {
-    const send = vi.fn().mockRejectedValue(new TypeError('fetch failed'));
+    const send = vi.fn().mockRejectedValue(refused());
     await expect(executeWithRetry(send, policy(), noopSleep)).rejects.toBeInstanceOf(TypeError);
     expect(send).toHaveBeenCalledTimes(3); // 1 + maxRetries(2)
   });
@@ -131,7 +143,7 @@ describe('executeWithRetry (unit)', () => {
   });
 
   it('policy=null disables retries (connection error propagates immediately)', async () => {
-    const send = vi.fn().mockRejectedValue(new TypeError('fetch failed'));
+    const send = vi.fn().mockRejectedValue(refused());
     await expect(executeWithRetry(send, null)).rejects.toBeInstanceOf(TypeError);
     expect(send).toHaveBeenCalledTimes(1);
   });
@@ -143,10 +155,7 @@ describe('retry wired into the client', () => {
   });
 
   it('client retries a connection error then succeeds', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockRejectedValueOnce(new TypeError('fetch failed'))
-      .mockResolvedValueOnce(ok());
+    const fetchMock = vi.fn().mockRejectedValueOnce(refused()).mockResolvedValueOnce(ok());
     vi.stubGlobal('fetch', fetchMock);
     const tg = new Shashu({
       baseUrl: 'https://gw.example',
@@ -156,5 +165,13 @@ describe('retry wired into the client', () => {
     const res = await tg.fetch('/v1/chat/completions', { method: 'POST' });
     expect(res.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('transport retry after the request has left', () => {
+  it('does not resend on ECONNRESET (request may already have run)', async () => {
+    const send = vi.fn().mockRejectedValueOnce(resetAfterSend()).mockResolvedValueOnce(ok());
+    await expect(executeWithRetry(send, policy(), noopSleep)).rejects.toBeInstanceOf(TypeError);
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

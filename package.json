@@ -1,8 +1,8 @@
 {
   "name": "@shashu-ai/sdk",
   "type": "module",
-  "version": "1.1.1",
-  "description": "Node.js client for SHASHU by Trustgate AI, a self-hosted AI security gateway. Point it at your own gateway; there is no default endpoint.",
+  "version": "1.2.0",
+  "description": "Node.js client for SHASHU, a self-hosted AI security gateway. Point it at your own gateway; there is no default endpoint.",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -51,7 +51,6 @@
   },
   "keywords": [
     "shashu",
-    "trustgate",
     "self-hosted",
     "ai-gateway",
     "security",
@@ -65,7 +64,7 @@
   "homepage": "https://shashu.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/trustgateai-io/shashu-node.git"
+    "url": "https://github.com/shashu-sec/shashu-node.git"
   },
   "devDependencies": {
     "@ai-sdk/openai": "2.0.66",

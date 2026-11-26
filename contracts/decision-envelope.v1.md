@@ -1,4 +1,4 @@
-# TrustGate decision envelope, v1
+# SHASHU decision envelope, v1
 
 **This is the canonical copy.** It lives here because the single definition it
 describes lives here: `core/app/contract/envelope.py`, with the worked wire

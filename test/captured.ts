@@ -109,7 +109,7 @@ export const LOOP_BREAKER_429 = {
 // scenario: 404_provider_model_not_found_passthrough
 export const PROVIDER_404 = {
   error: {
-    message: 'TrustGate Provider Error: Model not found (404)',
+    message: 'SHASHU Provider Error: Model not found (404)',
     type: 'ProviderModelNotFoundError',
     param: null,
     code: '404',
@@ -120,7 +120,7 @@ export const PROVIDER_404 = {
 // scenario: 400_provider_invalid_request_passthrough
 export const PROVIDER_400 = {
   error: {
-    message: 'TrustGate Provider Error: Invalid request (400)',
+    message: 'SHASHU Provider Error: Invalid request (400)',
     type: 'ProviderInvalidRequestError',
     param: null,
     code: '400',

@@ -29,7 +29,7 @@
  *    does NOT consume the bus -- the next real model call still carries the
  *    declaration, and a multi-gigabyte file upload does not eat it.
  *
- * Sibling of the Python SDK's `trustgate/_joiner.py`.
+ * Sibling of the Python SDK's `shashu/_joiner.py`.
  */
 
 import { clear, hasEvents, snapshot } from './_bus.js';
@@ -199,7 +199,7 @@ export function pinOutgoing(input: any, init?: any): { input: any; init: any } {
 }
 
 export function withRetrievalJoiner(underlying: FetchLike = globalFetch): FetchLike {
-  return async function trustgateJoiningFetch(input: any, init?: any): Promise<Response> {
+  return async function shashuJoiningFetch(input: any, init?: any): Promise<Response> {
     // The zero-cost guard: one getStore(), before anything is touched.
     if (!hasEvents()) return underlying(input, init);
 

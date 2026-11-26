@@ -148,12 +148,12 @@ describe('IDENTITY S1-FIX2: refusals by code', () => {
     const auths = plan([() => refusal('pass_expired'), ok]);
     const tg = new Shashu({
       baseUrl: 'http://127.0.0.1:9',
-      apiKey: 'tg_sk_test',
+      apiKey: 'shashu_sk_test',
       retryPolicy: null,
     });
     const err = await call(tg).catch((e) => e);
     expect(err.code).toBe('pass_expired');
-    expect(auths).toEqual(['Bearer tg_sk_test']);
+    expect(auths).toEqual(['Bearer shashu_sk_test']);
   });
 
   it('streaming: retries on pass_expired before any byte', async () => {

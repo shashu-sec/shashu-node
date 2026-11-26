@@ -12,7 +12,7 @@
  * the LLM provider, so the upstream model never sees the control plane.
  *
  * @example
- *   import { attachRagContext } from "@trustgateai/sdk";
+ *   import { attachRagContext } from "@shashu-ai/sdk";
  *   const body = { model: "gpt-4o-mini", messages: [...] };
  *   attachRagContext(body, {
  *     corpus: "policy_docs_v2",

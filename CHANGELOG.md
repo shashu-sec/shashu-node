@@ -1,9 +1,23 @@
 # Changelog
 
-All notable changes to SHASHU by Trustgate AI (Node.js SDK, `@shashu-ai/sdk`) are
+All notable changes to SHASHU (Node.js SDK, `@shashu-ai/sdk`) are
 documented here. This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [1.2.0] — 2026-11-26
+
+BREAKING: framework state keys are now `shashu_session_id` / `shashu_trace_id`.
+The previous names are not read.
+
+Provider pass-through errors are recognised by `SHASHU Provider Error:` (needs a
+gateway that sends it). There is no fallback to the previous prefix.
+
+SHASHU keys start `shashu_sk_`. Metadata, docs, and package URLs no longer
+carry the previous product name.
+
+Fixed: after a request has been sent, a dropped connection is
+no longer retried automatically (avoids running the same request twice).
 
 ## [1.1.1] — 2026-11-25
 
@@ -22,8 +36,8 @@ The one-shot `pass_expired` retry is unchanged and does not stack with busy-retr
 
 ### Breaking
 
-- Environment variables are `SHASHU_API_KEY` / `SHASHU_BASE_URL` / `SHASHU_DISABLE` only. The `TRUSTGATE_*` fallbacks are removed.
-- Wire names are SHASHU only (`x-shashu-*`, `Shashu-Version`, `shashu_metadata`, body `shashu` / `error.shashu`). Old TrustGate names are neither sent nor read.
+- Environment variables are `SHASHU_API_KEY` / `SHASHU_BASE_URL` / `SHASHU_DISABLE` only. The old environment-variable names are no longer read.
+- Wire names are SHASHU only (`x-shashu-*`, `Shashu-Version`, `shashu_metadata`, body `shashu` / `error.shashu`). Old wire names are neither sent nor read.
 
 ## [1.0.0] — 2026-11-14
 
@@ -63,20 +77,20 @@ paste-once header list (key only).
 ### Changed: package name, licence, env, public names
 
 Package is `@shashu-ai/sdk`, version `1.0.0`, Apache-2.0.
-Environment variables are `SHASHU_*` first, then `TRUSTGATE_*` (warn once).
+Environment variables are `SHASHU_*` first, then `shashu_*` (warn once).
 Public type, function and exception names are SHASHU (`Shashu`, `ShashuError`,
-`shashuFetch`, `createShashuLangChainConfig`, …). Wire names (`x-trustgate-*`,
-`trustgate_metadata`, `tg_sk_`) are unchanged.
+`shashuFetch`, `createShashuLangChainConfig`, …). Wire names (`x-shashu-*`,
+`shashu_metadata`, `tg_sk_`) are unchanged.
 
 ## [4.0.0] — unreleased
 
 One behaviour change, plus everything merged since `3.0.1`. Read the first
 section before upgrading.
 
-### Behaviour change: `trustgate-version: 2026-09-01` is sent by default
+### Behaviour change: `shashu-version: 2026-09-01` is sent by default
 
-Every request this SDK makes now carries `trustgate-version: 2026-09-01`, the
-same value the Trustgate AI Python SDK has sent since `0.15.2`. That covers the
+Every request this SDK makes now carries `shashu-version: 2026-09-01`, the
+same value the shashu AI Python SDK has sent since `0.15.2`. That covers the
 `Shashu` client (`fetch` and `fetchStream`), `shashuFetch()`, and the
 headers built by the Anthropic, Gemini, LangChain and Vercel AI middleware.
 
@@ -106,12 +120,12 @@ it:
   LangChain, Anthropic, Gemini) now raises its own 400 or 403 error on a
   refusal (`BadRequestError`, `PermissionDeniedError`, …). Under `legacy` it
   returned the refusal as an ordinary 200 reply. The
-  `trustgate-block-encoding: explicit` header `shashuFetch()` already sent
+  `shashu-block-encoding: explicit` header `shashuFetch()` already sent
   now takes effect, because the gateway ignores it without a version.
 - **Full memory and inspection details are in the body.** A reply carries the
-  `trustgate` block, so `decision.memory.items` lists each memory save and
+  `shashu` block, so `decision.memory.items` lists each memory save and
   recall (`kind`, `state`, `reason`, `tool`, `store`, …). Before, a flagged
-  save under Monitor was counted in `x-trustgate-memory` but not listed.
+  save under Monitor was counted in `x-shashu-memory` but not listed.
   `decision.memory.carrier` is now `"body"`.
 - **Unchanged by design:** under Block mode, a memory save the gateway strips
   from a reply is still a normal delivered reply, with `memoryBlocked === 1`
@@ -119,9 +133,9 @@ it:
 
 **To turn it off**, pass `contractVersion: null` to `new Shashu({...})`,
 `shashuFetch({...})` or any middleware config. The SDK then sends no
-`trustgate-version` header and the gateway serves the account default,
+`shashu-version` header and the gateway serves the account default,
 `legacy` unless an operator changed it. Pass `contractVersion: "<date>"` to pin
-another version. A `trustgate-version` entry you put in `headers` yourself
+another version. A `shashu-version` entry you put in `headers` yourself
 always wins.
 
 New public names: `DEFAULT_CONTRACT_VERSION`, `CONTRACT_VERSION_HEADER`, and
@@ -142,7 +156,7 @@ memory checks can run on them.
 - `store` is required. `scope` is `agent` (default), `crew` or `tenant`.
   `source` is one of the `memory_context.v1` values (default `sdk`). Anything
   else throws `TypeError`.
-- A no-op under `TRUSTGATE_DISABLE`. No collectors are included: a framework's
+- A no-op under `shashu_DISABLE`. No collectors are included: a framework's
   memory is not captured automatically.
 
 ### Added: reading file, memory and route-policy results (FILE-06)
@@ -152,7 +166,7 @@ route-policy block (`contracts/decision-envelope.v1.md`, contract
 `2026-10-01`). They are readable, read-only, off the decision:
 
 - **Files** — `d.attachments`, `d.filesUnverified`, `d.filesBlocked`. Body first; on a header-only (streaming) response the
-  counts come from `x-trustgate-attachments` and `attachments.carrier` says
+  counts come from `x-shashu-attachments` and `attachments.carrier` says
   `"header"`. `files_unverified` is `not_inspected + scanned_partial`.
 - **Memory** — `d.memory`, `d.memoryBlocked`, `d.memoryRecallsFlagged`, `d.memoryCoverage`.
 - **Route policy** — `d.routePolicy`, and `err.routePolicy` on the refusal, so an app can
@@ -213,7 +227,7 @@ the middleware path.
 
 ### Upgrading from 1.8.0: session limits can start firing, with no change on your side
 
-**`new Shashu()` traffic now carries a client-sent `x-trustgate-session-id`.**
+**`new Shashu()` traffic now carries a client-sent `x-shashu-session-id`.**
 Until now it carried none, and the gateway filled in a derived id for display
 only. The gateway's session-window scan and per-session scan budget act only
 on a client-sent session id. From `3.0.0` they do. An application you have not
@@ -224,7 +238,7 @@ session. A long-lived client shared across users must pass a per-request
 
 ### Added — session at origin, the gateway's decision, `isShashuBlock`
 
-The constructed client now sends `x-trustgate-session-id` on every request,
+The constructed client now sends `x-shashu-session-id` on every request,
 including at origin. One client is one session; a captured A2A session
 overrides the construction-time default; a per-request `sessionId` is an
 instruction that wins. Without this header the gateway synthesises
@@ -233,7 +247,7 @@ first message is a static system prompt collapses into one Sessions row.
 
 `shashuDecision` / `decisionFrom` read all six outcomes (`allow`,
 `allow_altered`, `not_checked`, `block`, `refuse`, `fail`) from both
-carriers (`body.trustgate` and the `x-trustgate-*` headers). Absence is
+carriers (`body.shashu` and the `x-shashu-*` headers). Absence is
 today's behaviour: a response with neither carrier is unchanged.
 `isShashuBlock(err)` inspects an error and answers yes or no. It
 replaces nothing and fails closed; `raiseForResponse` still fails open as
@@ -314,7 +328,7 @@ the gateway on 2026-09-07 it is one of four:
 - a §3 **reason** — `jailbreak`, `dlp`, `egress_denied`, `auth_expired`, … — on
   every path served under contract `2026-09-01`;
 - the **HTTP status as a string** — still live, and still the default: an
-  account that sets no `TrustGate-Version` is served `legacy`, and every refusal
+  account that sets no `SHASHU-Version` is served `legacy`, and every refusal
   the gateway's `HTTPException` handler renders carries `str(status_code)`
   whatever the version;
 - the literal `"invalid_request"`, on a schema-invalid body on the LLM wire;
@@ -390,7 +404,7 @@ awaited.
 
 `declareRetrieval(docs, { corpus, query })` records what a retrieval returned
 wherever it happened, and the SDK attaches it to the next model call as
-`trustgate_metadata.rag_context`. `retrievalScope()` bounds one declaration to a
+`shashu_metadata.rag_context`. `retrievalScope()` bounds one declaration to a
 block, including a `Promise.all` fan-out where each task declares before its
 first `await`. The contract
 (`contracts/rag_context.v1.schema.json`) is vendored byte-for-byte from the
@@ -458,7 +472,7 @@ adding protection is a separate change.
 > `DEFAULT_GATEWAY_URL` export that held that host is gone.
 
 Sibling of the Python SDK's `b3a92fb`, which made the same change there. The
-Python `trustgate/_config.py` is the reference this implementation matches,
+Python `shashu/_config.py` is the reference this implementation matches,
 down to the error wording.
 
 ### Removed — the default gateway host, at all seven sites
@@ -483,7 +497,7 @@ than six copies of the same expression that had already drifted — only the
 client guarded `typeof process !== "undefined"`; the other five would throw in
 an edge runtime. Resolution is now, everywhere:
 
-**explicit `baseUrl` option → `TRUSTGATE_BASE_URL` → `ShashuConfigError`.**
+**explicit `baseUrl` option → `shashu_BASE_URL` → `ShashuConfigError`.**
 
 A blank or whitespace-only env var counts as unset. Trailing slashes are still
 stripped.
@@ -501,12 +515,12 @@ dead code. The behaviour change above is breaking on its own, so removing the
 export costs no additional version increment.
 
 If you were importing it, replace it with your own gateway address — passed as
-`baseUrl` or set as `TRUSTGATE_BASE_URL`.
+`baseUrl` or set as `shashu_BASE_URL`.
 
 ### Added — `ShashuConfigError`
 
 ```ts
-import { ShashuConfigError } from '@trustgateai/sdk';
+import { ShashuConfigError } from '@shashu-ai/sdk';
 ```
 
 A `ShashuError` subclass, so existing `catch (e) { e instanceof ShashuError }`
@@ -518,9 +532,9 @@ statement that nothing was sent.
 Its message names the environment variable, the option and the entry point, and
 deliberately names **no hostname**: there is no address to suggest.
 
-### Added — `TRUSTGATE_DISABLE`
+### Added — `shashu_DISABLE`
 
-Set `TRUSTGATE_DISABLE=1` (or `true` / `yes` / `on`, any case) to make the SDK a
+Set `shashu_DISABLE=1` (or `true` / `yes` / `on`, any case) to make the SDK a
 no-op without a code change, matching the Python SDK. The four middleware
 helpers then return `{}` and throw nothing even with no address configured —
 your provider client keeps its own endpoint, its own credential and no Shashu
@@ -541,7 +555,7 @@ return types, because `{}` is what a disabled SDK returns. Code that read
 
 The tracer resolves its address **optionally**, unlike every other entry point.
 It is constructed when the module is imported (`export const tracer = new Tracer()`),
-so throwing there would make `import '@trustgateai/sdk'` fail for anyone who has
+so throwing there would make `import '@shashu-ai/sdk'` fail for anyone who has
 not set the variable — a far worse failure than the one being fixed. Unconfigured,
 it holds no address and posts no span telemetry. Same shape as the Python SDK's
 telemetry path.
@@ -576,7 +590,7 @@ _[If you built against the old behaviour](#if-you-built-against-the-old-behaviou
 below.
 
 Error-contract corrections. Everything below was verified against
-`sdks/e2e/capture_error_contract.py` in the trustgate-ai repo, which drives a
+`sdks/e2e/capture_error_contract.py` in the gateway repo, which drives a
 live gateway and records what it actually sends. Nothing here is asserted from
 reading gateway source. Sibling of the Python SDK 0.10.0 change.
 
@@ -642,18 +656,18 @@ exported and still extends `ShashuPermissionError`, so imports and
 nothing throws it any more. Code that checks _only_ for the budget subclass will
 now see `ShashuPolicyViolation`. Check the parent to cover both. The class
 becomes reachable again if the gateway ships a real discriminator (ticket
-[`TRUSTGATE-403-DISCRIMINATOR`](https://github.com/aisquad001/trustgate-ai/issues/736)).
+[`the 403 discriminator ticket`](https://the gateway repository/issues/736)).
 
 ### Fixed — a 401 was documented as the gateway's own auth failure
 
 The module header mapped `401 -> type="authentication_error"`. That is backwards.
 The gateway's own agent-key failure sends `type="invalid_request_error"` with
-message `"Invalid TrustGate API Key"` (or `"Not authenticated"`, plus a
+message `"Invalid SHASHU API Key"` (or `"Not authenticated"`, plus a
 `WWW-Authenticate: Bearer` header). Both captured.
 
 `authentication_error` is what a **provider pass-through** carries: the gateway's
 own stored provider credential was rejected upstream, and the message is prefixed
-`TrustGate Provider Error:`. The caller's `tg_sk_` key is fine in that case and
+`SHASHU Provider Error:`. The caller's `tg_sk_` key is fine in that case and
 rotating it fixes nothing — a gateway operator has to replace the provider
 secret. The old header pointed every reader at the wrong credential. The same
 applies to 403 (`ProviderPermissionError`), 404, 429 and the 5xx family.
@@ -771,7 +785,7 @@ happens only when the gateway named a time to come back, via the newly exported
 
 **5. A 401 does not mean your API key is wrong.** The module header mapped
 `401 -> type="authentication_error"`; backwards. Your own key failing sends
-`type="invalid_request_error"` with `"Invalid TrustGate API Key"`.
+`type="invalid_request_error"` with `"Invalid SHASHU API Key"`.
 `authentication_error` means the **gateway's stored provider credential** was
 rejected upstream — rotating your `tg_sk_` key fixes nothing, an operator has to
 replace the provider secret. Use the new
@@ -784,17 +798,17 @@ receives is unconsumed. Covered by a test.
 
 ## [1.7.2] — 2026-07-30
 
-Wire-parity fixes vs the Python SDK reference (`trustgate` `context.py`).
+Wire-parity fixes vs the Python SDK reference (`shashu` `context.py`).
 
 ### Fixed
 
-- **`x-trustgate-parent-id` no longer equals `x-trustgate-span-id`.** The header
+- **`x-shashu-parent-id` no longer equals `x-shashu-span-id`.** The header
   block set both to the current span's id, so every span reported itself as its
-  own parent on the wire. `x-trustgate-parent-id` now carries the REAL parent
+  own parent on the wire. `x-shashu-parent-id` now carries the REAL parent
   span id via the new `tracer.parentSpanId` getter — `""` for a root span
   (Python parity).
 - **A trace id is now ALWAYS emitted at origin.** With no active span and no
-  captured A2A flow, no `x-trustgate-trace-id` was emitted at all. Origin now
+  captured A2A flow, no `x-shashu-trace-id` was emitted at all. Origin now
   resolves one mirroring Python `_get_trace_id()`: `N8N_EXECUTION_ID` →
   `GITHUB_RUN_ID` → `CI_PIPELINE_ID` (when `GITLAB_CI` is set) → a fresh UUID.
   The mid-flow (`isA2aHop`) and in-span branches are unchanged.
@@ -827,19 +841,19 @@ locked ADR-007 §4.1 caller semantics.
   request, capture the inbound flow so a downstream call through the SDK PROPAGATES
   it (one lineage / one session across hops) instead of minting a fresh trace per process.
   - `captureIncoming(headers)` and the scoped `tracer.incoming(headers, fn)` read
-    `x-trustgate-trace-id` / `-session-id` / `-hop-depth` **and `-caller-agent-id`**
+    `x-shashu-trace-id` / `-session-id` / `-hop-depth` **and `-caller-agent-id`**
     (the upstream invoker) into the `AsyncLocalStorage` tracer (case-insensitive;
     plain objects, `Headers`, `Map`, or pair-arrays).
   - The outbound **gateway** call propagates the captured trace (minted only at
-    origin), and attaches `x-trustgate-session-id`, `x-trustgate-hop-depth` (inbound+1),
-    and `x-trustgate-caller-agent-id` = **the FORWARDED inbound caller** — the upstream
+    origin), and attaches `x-shashu-session-id`, `x-shashu-hop-depth` (inbound+1),
+    and `x-shashu-caller-agent-id` = **the FORWARDED inbound caller** — the upstream
     invoker, NEVER this agent's own id (so the gateway records the real invoker→callee
     edge, not a self-edge). Origin / caller-stripped ⇒ the caller header is omitted.
   - `buildInvocationHeaders({ callerAgentId })` (and `Shashu.buildInvocationHeaders()`,
     which uses the client's cached self-id) build the lineage headers for the **invoking**
     side — the one place caller = self: the message this agent sends to a downstream agent.
   - `Shashu` gained an `agentId` option; the client caches this agent's id from each
-    gateway response's `x-trustgate-agent-id` header (incl. 4xx) for use as the invocation caller.
+    gateway response's `x-shashu-agent-id` header (incl. 4xx) for use as the invocation caller.
 
 ### Notes
 
@@ -887,7 +901,7 @@ Mirrors the Python SDK v0.8.0 (typed exceptions + conservative retries).
 - **403 budget-vs-policy split is best-effort** (matches `/budget/i` in the
   message) because every soft-block 403 shares
   `{type:"invalid_request_error", code:"403"}`. Replaced once the gateway emits a
-  stable discriminator (ticket `TRUSTGATE-403-DISCRIMINATOR`).
+  stable discriminator (ticket `the 403 discriminator ticket`).
 - Streaming (`fetchStream`) remains inert against the current gateway (it
   force-buffers chat responses and emits no chat SSE regardless of the `stream`
   flag or DLP settings). `fetchStream` now carries a NOTICE in its docstring and

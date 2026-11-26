@@ -48,7 +48,7 @@ describe('IDENTITY S1', () => {
       () =>
         new Shashu({
           baseUrl: 'http://127.0.0.1:9',
-          apiKey: 'tg_sk_x',
+          apiKey: 'shashu_sk_x',
           tokenProvider: () => 'p',
         })
     ).toThrow(BOTH_OR_NEITHER);
@@ -192,7 +192,7 @@ describe('IDENTITY S1', () => {
     });
     const tg = new Shashu({
       baseUrl: 'http://127.0.0.1:9',
-      apiKey: 'tg_sk_test',
+      apiKey: 'shashu_sk_test',
       retryPolicy: null,
     });
     await expect(

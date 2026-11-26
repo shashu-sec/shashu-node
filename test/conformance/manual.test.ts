@@ -21,9 +21,9 @@ let gateway: MockGateway;
 
 /** The client a customer builds from what the middleware hands back. */
 function client(): OpenAI {
-  const options = createShashuOpenAIOptions({ baseUrl: `${GATEWAY}/v1`, apiKey: 'tg_sk_test' });
+  const options = createShashuOpenAIOptions({ baseUrl: `${GATEWAY}/v1`, apiKey: 'shashu_sk_test' });
   return new OpenAI({
-    apiKey: 'tg_sk_test',
+    apiKey: 'shashu_sk_test',
     baseURL: options.baseURL,
     defaultHeaders: options.headers,
     fetch: options.fetch,

@@ -29,8 +29,12 @@
  * has already spent its own three attempts on it.
  *
  * By default the SDK retries:
- *  - connection-level failures reaching the gateway (the request never landed), and
+ *  - transport failures before any request byte is sent (ECONNREFUSED, DNS,
+ *    connect timeout), and
  *  - HTTP 429 **that carries a retry time**, honoring it.
+ *
+ * A dropped connection after the request has left is raised, not retried —
+ * the gateway may already have run the call.
  *
  * 401/400/403/404, a 429 with no retry time, and 200-`content_filter` are never
  * retried — they are decisions, not transient failures.
@@ -45,7 +49,7 @@ export interface RetryPolicy {
   backoffBaseSeconds: number;
   /** Cap on any single backoff (seconds). Default 30. */
   backoffMaxSeconds: number;
-  /** Retry connection-level failures (fetch TypeError). Default true. */
+  /** Retry transport failures that happen before any request byte is sent. Default true. */
   retryOnConnectionErrors: boolean;
   /** Retry HTTP 429. Default true. */
   retryOn429: boolean;
@@ -150,10 +154,23 @@ function delayFor(
   return jitter(policy.backoffBaseSeconds * 2 ** attempt);
 }
 
-/** A thrown error from `fetch` that represents a connection-level failure. */
-function isConnectionError(err: unknown): boolean {
-  // undici/global fetch rejects network failures as a TypeError ("fetch failed").
-  return err instanceof TypeError;
+const UNSENT_CODES = new Set([
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'EHOSTUNREACH',
+  'UND_ERR_CONNECT',
+  'UND_ERR_CONNECT_TIMEOUT',
+]);
+
+/** True when fetch failed before any request byte left this process. */
+function requestNeverLeft(err: unknown): boolean {
+  if (!(err instanceof TypeError)) return false;
+  const cause = (err as { cause?: { code?: string; name?: string } }).cause;
+  const code = cause?.code ?? '';
+  if (UNSENT_CODES.has(code)) return true;
+  return cause?.name === 'ConnectTimeoutError' || cause?.name === 'ConnectError';
 }
 
 const defaultSleep = (seconds: number): Promise<void> =>
@@ -185,7 +202,7 @@ export async function executeWithRetry(
     try {
       res = await send();
     } catch (err) {
-      if (policy.retryOnConnectionErrors && isConnectionError(err) && attempt < policy.maxRetries) {
+      if (policy.retryOnConnectionErrors && requestNeverLeft(err) && attempt < policy.maxRetries) {
         await sleep(delayFor(policy, attempt, null, undefined));
         attempt += 1;
         continue;

@@ -41,14 +41,17 @@ class CanaryRetriever extends BaseRetriever {
 }
 
 function chainFor(canary: string) {
-  const config = createShashuLangChainConfig({ baseUrl: `${GATEWAY}/v1`, apiKey: 'tg_sk_test' });
+  const config = createShashuLangChainConfig({
+    baseUrl: `${GATEWAY}/v1`,
+    apiKey: 'shashu_sk_test',
+  });
   return RunnableSequence.from([
     new CanaryRetriever(canary),
     RunnableLambda.from((docs: Document[]) => ({
       context: docs.map((d) => d.pageContent).join('\n'),
     })),
     ChatPromptTemplate.fromMessages([['human', 'Answer from: {context}']]),
-    new ChatOpenAI({ apiKey: 'tg_sk_test', model: 'gpt-4o-mini', ...config }),
+    new ChatOpenAI({ apiKey: 'shashu_sk_test', model: 'gpt-4o-mini', ...config }),
   ]);
 }
 

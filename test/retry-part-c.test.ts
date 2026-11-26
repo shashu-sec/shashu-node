@@ -70,7 +70,7 @@ describe('Part C busy-retry capture harness', () => {
       return n === 1 ? busy() : ok();
     });
     declareRetrieval([{ id: 'd', text: 'CANARY', score: 0.1 }], { corpus: 'c1', query: 'q' });
-    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'tg_sk_test' });
+    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'shashu_sk_test' });
     await tg.fetch('/v1/chat/completions', {
       method: 'POST',
       body: JSON.stringify({ model: 'm', messages: [{ role: 'user', content: 'hi' }] }),
@@ -89,7 +89,7 @@ describe('Part C busy-retry capture harness', () => {
       return n === 1 ? busy(429) : ok();
     });
     declareRetrieval([{ id: 'd', text: 'CANARY', score: 0.1 }], { corpus: 'c2', query: 'q' });
-    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'tg_sk_test' });
+    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'shashu_sk_test' });
     await tg.fetch('/v1/chat/completions', {
       method: 'POST',
       body: JSON.stringify({ model: 'm', messages: [{ role: 'user', content: 'hi' }] }),
@@ -217,7 +217,7 @@ describe('Part C busy-retry capture harness', () => {
       n += 1;
       return n === 1 ? busy() : ok();
     });
-    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'tg_sk_same' });
+    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'shashu_sk_same' });
     await tg.fetch('/v1/chat/completions', {
       method: 'POST',
       body: JSON.stringify({ model: 'm', messages: [{ role: 'user', content: 'hi' }] }),

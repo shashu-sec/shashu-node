@@ -86,7 +86,7 @@ export function shashuFetch(options: ShashuFetchOptions = {}): FetchLike {
     for (const [k, v] of Object.entries(options.headers)) baked[k.toLowerCase()] = v;
   }
 
-  return async function trustgateFetching(input: any, init?: any): Promise<Response> {
+  return async function shashuFetching(input: any, init?: any): Promise<Response> {
     const send = async (): Promise<Response> => {
       const headers = { ...baked };
       const extra = init?.headers;

@@ -1,11 +1,11 @@
 # @shashu-ai/sdk
 
-Node.js client for **SHASHU by Trustgate AI**, a self-hosted AI security gateway for
+Node.js client for **SHASHU**, a self-hosted AI security gateway for
 regulated industries. There is no default gateway hostname — you point the
 client at your own address, and it raises a configuration error rather than
 guessing. After the first mention, this document says **SHASHU**.
 
-Wire names `x-shashu-*`, `shashu_metadata`, and the `tg_sk_` key prefix
+Wire names `x-shashu-*`, `shashu_metadata`, and the `shashu_sk_` key prefix
 are protocol names and are unchanged.
 
 Requires Node.js 18 or later.
@@ -34,7 +34,10 @@ Key:
 
 ```ts
 import { Shashu } from '@shashu-ai/sdk';
-const client = new Shashu({ baseUrl: 'https://your-shashu-gateway.example', apiKey: 'tg_sk_...' });
+const client = new Shashu({
+  baseUrl: 'https://your-shashu-gateway.example',
+  apiKey: 'shashu_sk_...',
+});
 ```
 
 Cloud pass (the function is yours; SHASHU never calls Entra, Google or AWS):
@@ -178,7 +181,7 @@ gateway did not send a decision — that is not `allow`. `isShashuBlock()`
 inspects; it patches nothing. An unrecognised decision fails closed (`true`).
 
 **This SDK sends `shashu-version: 2026-09-01` by default** (since 4.0.0), the
-same value as the Trustgate AI Python SDK. The `Shashu` client,
+same value as the shashu AI Python SDK. The `Shashu` client,
 `shashuFetch()` and the middleware configs all send it. With it, the body of
 every reply carries the full `shashu` block, so `decision.memory.items` lists
 each memory save and recall and you get the inspection detail, not just header

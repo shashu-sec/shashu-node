@@ -54,7 +54,7 @@ describe('busy retry resends the same built request', () => {
       corpus: 'policy_docs_v2',
       query: 'backups',
     });
-    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'tg_sk_test' });
+    const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'shashu_sk_test' });
     const p = tg.fetch('/v1/chat/completions', {
       method: 'POST',
       body: JSON.stringify({ model: 'm', messages: [{ role: 'user', content: 'hi' }] }),
@@ -84,7 +84,7 @@ describe('busy retry resends the same built request', () => {
     async function worker(corpus: string, canary: string) {
       await Promise.resolve();
       declareRetrieval([{ id: 'd', text: canary, score: 0.5 }], { corpus, query: canary });
-      const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'tg_sk_test' });
+      const tg = new Shashu({ baseUrl: 'https://gw.example', apiKey: 'shashu_sk_test' });
       await tg.fetch('/v1/chat/completions', {
         method: 'POST',
         body: JSON.stringify({ model: 'm', messages: [{ role: 'user', content: 'hi' }] }),

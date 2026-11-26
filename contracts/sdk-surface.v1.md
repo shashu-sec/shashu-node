@@ -1,6 +1,6 @@
-# TrustGate SDK public surface, v1
+# SHASHU SDK public surface, v1
 
-The customer-facing surface of every TrustGate SDK. The code under the hood
+The customer-facing surface of every SHASHU SDK. The code under the hood
 differs per language and that is expected; **what a customer types must not.**
 
 This file sits beside `rag_context.v1.schema.json` and
@@ -63,15 +63,15 @@ language lands:
 
 | Language | Qualifier | How the customer reaches the functions |
 |---|---|---|
-| Python | none — imported directly | `from trustgate import declare_retrieval, retrieval_scope` |
-| Node | none — imported directly | `import { declareRetrieval, retrievalScope } from "@trustgateai/sdk"` |
+| Python | none — imported directly | `from shashu import declare_retrieval, retrieval_scope` |
+| Node | none — imported directly | `import { declareRetrieval, retrievalScope } from "@shashu-ai/sdk"` |
 | Java | static holder named `Retrieval` | `Retrieval.declareRetrieval(docs, corpus)` |
-| .NET | static holder named `Retrieval` | `using static TrustGate.Retrieval;` then `DeclareRetrieval(docs, corpus: ...)`, or fully qualified `TrustGate.Retrieval.DeclareRetrieval(docs, corpus: ...)` |
+| .NET | static holder named `Retrieval` | `using static Shashu.Retrieval;` then `DeclareRetrieval(docs, corpus: ...)`, or fully qualified `Shashu.Retrieval.DeclareRetrieval(docs, corpus: ...)` |
 
 Python and Node import functions directly and need no holder. Java and C# have
 no free functions, so both require one — and it is named for what it does
 rather than for the product, so the qualifier does not stutter
-(`TrustGate.TrustGate`) and does not shadow the namespace it lives in.
+(`Shashu.Shashu`) and does not shadow the namespace it lives in.
 
 ---
 
@@ -102,10 +102,10 @@ Binds those items to that unit of work, wherever it runs, in the same form as
 
 | Language | Qualifier | How the customer reaches the functions |
 |---|---|---|
-| Python | none — imported directly | `from trustgate import declare_memory, memory_scope` |
-| Node | none — imported directly | `import { declareMemory, memoryScope } from "@trustgateai/sdk"` |
+| Python | none — imported directly | `from shashu import declare_memory, memory_scope` |
+| Node | none — imported directly | `import { declareMemory, memoryScope } from "@shashu-ai/sdk"` |
 | Java | static holder named `Memory` | `Memory.declareMemory(items, store)` |
-| .NET | static holder named `Memory` | `using static TrustGate.Memory;` then `DeclareMemory(items, store: ...)`, or fully qualified `TrustGate.Memory.DeclareMemory(items, store: ...)` |
+| .NET | static holder named `Memory` | `using static Shashu.Memory;` then `DeclareMemory(items, store: ...)`, or fully qualified `Shashu.Memory.DeclareMemory(items, store: ...)` |
 
 ---
 
@@ -140,10 +140,10 @@ return:
 
 | Language | Read the decision | Recognise a block |
 |---|---|---|
-| Python | `trustgate_decision(result_or_error)` | `is_trustgate_block(err)` |
-| Node | `trustgateDecision(resultOrError)` | `isTrustGateBlock(err)` |
-| Java | `TrustGate.decisionOf(resultOrError)` | `TrustGate.isBlock(err)` |
-| .NET | `TrustGate.DecisionOf(resultOrError)` | `TrustGate.IsBlock(err)` |
+| Python | `shashu_decision(result_or_error)` | `is_shashu_block(err)` |
+| Node | `shashuDecision(resultOrError)` | `isShashuBlock(err)` |
+| Java | `Shashu.decisionOf(resultOrError)` | `Shashu.isBlock(err)` |
+| .NET | `Shashu.DecisionOf(resultOrError)` | `Shashu.IsBlock(err)` |
 
 Three properties are fixed in every language:
 
@@ -154,7 +154,7 @@ Three properties are fixed in every language:
 3. **No SDK holds a copy of the `code` vocabulary.** Block-ness is carried by
    `decision`; `code` grows, and four hardcoded copies would need four edits.
 
-`is_trustgate_block` **fails closed** — a TrustGate block signal the SDK cannot
+`is_shashu_block` **fails closed** — a SHASHU block signal the SDK cannot
 fully parse answers true. It replaces nothing, so the cost of a wrong "yes" is
 one unnecessary review branch and the cost of a wrong "no" is blocked content
 treated as delivered.
@@ -223,8 +223,8 @@ same way (the family rule above). The six are generated into
 
 Settled 2026-09-17, replacing a recorded divergence.
 
-`is_trustgate_block` / `isTrustGateBlock` / `TrustGate.isBlock` /
-`TrustGate.IsBlock` answer **one** question: is `decision` the value `block`?
+`is_shashu_block` / `isShashuBlock` / `Shashu.isBlock` /
+`Shashu.IsBlock` answer **one** question: is `decision` the value `block`?
 It reads `decision` and never `code`, in all four languages.
 
 It is deliberately NOT "did the caller get content". Java and .NET used to
@@ -245,7 +245,7 @@ unrecognised `decision` is **coerced to `block`** and only then compared, so a
 decision the gateway invents after an SDK ships is still a block. That is
 `_coerce_decision` (Python), `coerceDecision` (Node), `coerceDecision`
 (Java) and `CoerceDecision` (.NET) — four implementations of one rule.
-Absence still returns nothing, and a TrustGate block signal that cannot be
+Absence still returns nothing, and a SHASHU block signal that cannot be
 parsed is still `true`.
 
 ### The 400 path — headers are the discriminator
@@ -254,7 +254,7 @@ On an error response, what says the response is OURS is the presence of the
 `x-shashu-*` headers, **not** the value of any code. Headers present means
 it passed through the gateway. Headers absent means it is not ours — most
 likely the caller's own malformed request — and no SDK may claim it as a
-TrustGate block. Every builder in `app/contract/responses.py` attaches
+SHASHU block. Every builder in `app/contract/responses.py` attaches
 `Envelope.headers()`, including the 400 refusal path, so the discriminator is
 present on every contract response and cannot be switched off.
 
@@ -279,8 +279,8 @@ where there is no object of ours to hand it:
 |---|---|
 | Python | `decision_from(body, headers)` |
 | Node | `decisionFrom(body, headers)` |
-| Java | `TrustGate.decisionFrom(body, headers)` |
-| .NET | `TrustGate.DecisionFrom(body, headers)` |
+| Java | `Shashu.decisionFrom(body, headers)` |
+| .NET | `Shashu.DecisionFrom(body, headers)` |
 
 Either argument may be absent. Absence in both returns nothing — property 1
 above, unchanged.
@@ -303,7 +303,7 @@ The record types are `Attachments` (with `Attachment` items and their
 `AttachmentFinding`s), `AttachmentState`, `MemoryActivity` (with `MemoryItem`
 items) and `RoutePolicy` — the same names in all four. A refused memory write
 raises `MemoryWriteBlocked`, a subclass of each SDK's existing 403 type
-(`TrustGatePolicyViolation`); the route policy is also readable off that
+(`ShashuPolicyViolation`); the route policy is also readable off that
 exception (`route_policy` / `routePolicy` / `routePolicy()` / `RoutePolicy`).
 
 Five properties are fixed in every language:
@@ -332,7 +332,7 @@ Five properties are fixed in every language:
    false. The gateway's memory refusals today refuse a **recall**, a request
    that relies on provider-kept history, or a suspicious instruction change; a
    blocked **write** is stripped from a delivered reply (`memory_blocked` = 1),
-   not refused. So those refusals raise the parent `TrustGatePolicyViolation`,
+   not refused. So those refusals raise the parent `ShashuPolicyViolation`,
    whose decision carries the memory block (a `recall` item in state `blocked`)
    and whose message is the memory sentence.
 
@@ -342,7 +342,7 @@ Five properties are fixed in every language:
 
 Additive in v1, added 2026-09-08.
 
-Most agents are not written against a TrustGate client. They are written
+Most agents are not written against a SHASHU client. They are written
 against `ChatOpenAI`, `LlamaIndex`'s `OpenAI`, or a bare provider SDK, and
 those never call our client — so our retrieval joiner is not mounted and our
 `x-shashu-*` headers are never built.
@@ -356,14 +356,14 @@ where.** Nothing is patched by importing an SDK; each of these acts only when
 the application calls it:
 
 - **Python — deprecated, not removed.** `patch_openai`, `patch_anthropic`,
-  `patch_google_generativeai` and `patch_all` are exported from `trustgate`.
+  `patch_google_generativeai` and `patch_all` are exported from `shashu`.
   Called, they rebind methods on the installed `openai`, `anthropic` and
   `google.generativeai` libraries in that process. They have been deprecated
   since Python SDK 0.13.0 — every call emits a `DeprecationWarning` — and the
   SDK schedules their removal for a future major release. They still work
   unchanged until then.
 - **Node — the LangChain collector.** `install()` from
-  `@trustgateai/sdk/middleware/langchain` rebinds `CallbackManager` and
+  `@shashu-ai/sdk/middleware/langchain` rebinds `CallbackManager` and
   retriever-run methods in `@langchain/core`, so retrievals are declared
   without a `callbacks` argument. It is not deprecated.
 
@@ -371,10 +371,10 @@ No new SDK surface may integrate by patching.
 
 | Language | Factory |
 |---|---|
-| Python | `trustgate_http_client(...)` / `trustgate_async_http_client(...)` |
-| Node | `trustgateFetch(...)` |
-| Java | `TrustGate.httpClient(...)` |
-| .NET | `TrustGate.HttpClient(...)` |
+| Python | `shashu_http_client(...)` / `shashu_async_http_client(...)` |
+| Node | `shashuFetch(...)` |
+| Java | `GatewayRouting.newOkHttpClient(...)` |
+| .NET | `GatewayRouting.NewHttpClient(...)` |
 
 Three properties are fixed in every language:
 
@@ -441,10 +441,10 @@ client shape sends one, from the first request, including at origin.
 
 | Language | On the constructed client | Per request |
 |---|---|---|
-| Python | `TrustGate(..., session_id=None)` / `AsyncTrustGate(..., session_id=None)` | `create(..., session_id=None)` |
-| Node | `new TrustGate({ sessionId })` / `trustgateFetch({ sessionId })` | `fetch(path, init, { sessionId })` |
-| .NET | `new TrustGateClient(new TrustGateClientOptions { SessionId = ... })` | `CreateAsync(..., sessionId: ...)` / `CreateStreamAsync(..., sessionId: ...)` |
-| Java | `TrustGateClient.builder().sessionId(...)` | `create(..., sessionId)` / `createStream(..., sessionId)` |
+| Python | `Shashu(..., session_id=None)` / `AsyncShashu(..., session_id=None)` | `create(..., session_id=None)` |
+| Node | `new Shashu({ sessionId })` / `shashuFetch({ sessionId })` | `fetch(path, init, { sessionId })` |
+| .NET | `new ShashuClient(new ShashuConfig { SessionId = ... })` | `CreateAsync(..., sessionId: ...)` / `CreateStreamAsync(..., sessionId: ...)` |
+| Java | `ShashuClient.builder().sessionId(...)` | `create(..., sessionId)` / `createStream(..., sessionId)` |
 
 The factory's `session_id=` (above) is the same argument; its headers are fixed
 when the client is built, so it has no per-request form and its `session_id=`
@@ -477,22 +477,22 @@ request, as it did before, and only the factory fixes its trace at construction.
 
 Fixed:
 
-- `TRUSTGATE_BASE_URL` — the gateway address. **There is no default and no SDK
-  may guess one.** TrustGate is self-hosted; a vendor hostname fallback would
+- `SHASHU_BASE_URL` — the gateway address. **There is no default and no SDK
+  may guess one.** SHASHU is self-hosted; a vendor hostname fallback would
   send a misconfigured process's prompts to a host nobody in that organisation
   chose.
-- `TRUSTGATE_DISABLE` — set to `1` to make every entry point a no-op, without a
+- `SHASHU_DISABLE` — set to `1` to make every entry point a no-op, without a
   code change.
-- A `TrustGateConfigError` equivalent — raised/thrown when no address resolves.
+- A `ShashuConfigError` equivalent — raised/thrown when no address resolves.
 
 ### The frozen error message
 
 When nothing resolves, the message is, verbatim:
 
 ```
-TrustGate gateway address is not configured, so {entry_point} has nothing to
-route to. Pass {argument} to {entry_point}, or set the TRUSTGATE_BASE_URL
-environment variable. TrustGate is self-hosted: the SDK has no default address
+SHASHU gateway address is not configured, so {entry_point} has nothing to
+route to. Pass {argument} to {entry_point}, or set the SHASHU_BASE_URL
+environment variable. SHASHU is self-hosted: the SDK has no default address
 and will not guess one.
 ```
 
@@ -501,21 +501,21 @@ and will not guess one.
 Two substitutions, and **only** two:
 
 - `{entry_point}` — the function the customer called, named as they would write
-  it: `patch_all()`, `new TrustGate()`.
+  it: `patch_all()`, `new Shashu()`.
 - `{argument}` — the argument that would have supplied the address, rendered
   the way that language passes it. This is the one place the two shipping SDKs
   differ today, and the difference is idiomatic, not drift:
   - Python renders the keyword form: `Pass base_url=... to patch_all()`
-  - Node renders the option name: `Pass baseUrl to new TrustGate()`
+  - Node renders the option name: `Pass baseUrl to new Shashu()`
 
-When more than one variable is read, `set the TRUSTGATE_BASE_URL environment
+When more than one variable is read, `set the SHASHU_BASE_URL environment
 variable` becomes `set one of the X or Y environment variables`. That branch is
 part of the frozen text too.
 
 Two properties hold in every language and are asserted by each SDK's surface
 test:
 
-1. The message **names `TRUSTGATE_BASE_URL`**.
+1. The message **names `SHASHU_BASE_URL`**.
 2. The message **contains no hostname.** There is no address to suggest, so
    suggesting one is a bug.
 
