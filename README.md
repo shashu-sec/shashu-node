@@ -89,12 +89,12 @@ const res = await client.fetch('/v1/chat/completions', {
   body: JSON.stringify({ model: 'gpt-4', messages: [...] }),
 });
 
-// SSE streaming (workflow_id sent in request for background attribution)
+// Streaming (server-sent events)
 const streamRes = await client.fetchStream('/v1/chat/completions', {
   method: 'POST',
   body: JSON.stringify({ model: 'gpt-4', messages: [...], stream: true }),
 });
-// Consume streamRes.body (ReadableStream) as usual for SSE
+// Read streamRes.body (a ReadableStream of SSE events) as usual
 ```
 
 ## Configuring the gateway address
@@ -213,9 +213,28 @@ const ctx = getWorkflowContextFromEnv();
 // { source: 'n8n', workflow_id: '...', execution_id: '...', metadata: {...} }
 ```
 
+## One trace for a run of calls
+
+Each call made outside a span starts its own trace. To keep a run of calls (a
+conversation, an agent run) in one trace, make them inside `tracer.span()`:
+
+```ts
+import { tracer } from '@shashu-ai/sdk';
+
+await tracer.span('support-conversation', async () => {
+  await client.fetch('/v1/chat/completions', { method: 'POST', body: turn1 });
+  await client.fetch('/v1/chat/completions', { method: 'POST', body: turn2 });
+});
+```
+
+Every call inside the callback sends the same `x-shashu-trace-id`. Trace ids the
+SDK creates are 32 lowercase hex characters. A trace id you bring in, for
+example from an incoming request with `tracer.incoming(headers, () => ...)`, is
+sent unchanged.
+
 ## Middleware: Vercel AI SDK
 
-Point the OpenAI provider at Shashu so all calls go through the gateway with workflow context:
+Works with the Vercel AI SDK (`ai`) 3 to 7. Point the OpenAI provider at Shashu so all calls go through the gateway with workflow context:
 
 ```ts
 import { createOpenAI } from '@ai-sdk/openai';
@@ -381,8 +400,20 @@ In n8n, set **Send Headers** (or equivalent) to the `headers` array or paste the
 
 ## Streaming (SSE)
 
-- Use `client.fetchStream(path, init, options)` for SSE endpoints. The client sets `Accept: text/event-stream` and sends workflow context (e.g. `workflow_id`) in the **initial request**, so the gateway can attribute the background stream.
-- The returned `Response` body is the raw stream; consume it with `response.body.getReader()` or pass through to your framework’s SSE handling.
+Send `stream: true` in the body and call `client.fetchStream(path, init, options)`.
+The gateway streams the answer back as server-sent events in the chat streaming
+format; read `response.body` with `getReader()` or hand it to your framework.
+
+- **Checked first, then streamed.** The gateway inspects the whole answer before
+  any of it reaches you, then sends it as a stream of events. The events arrive
+  one by one, but the first one arrives only after the model has finished.
+- **A security block is an error, not a broken stream.** Whether the gateway
+  blocks the request (for example an injected prompt) or the answer (for
+  example a leaked secret), it answers with an error before any event, and
+  `fetchStream` throws the typed exception, as `fetch` does:
+  `ShashuContentFilterError` (400) or `ShashuPolicyViolation` (403).
+- A refused pass is retried once, before anything is read. A stream is never
+  re-sent once it has started.
 
 ## License
 

@@ -1,7 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import type { WorkflowContext, RuntimeMetadata } from './types.js';
 import { SDK_VERSION } from './version.js';
-import { tracer } from './tracer.js';
+import { mintTraceId, tracer } from './tracer.js';
 
 /** Lowercase header prefix for proxy/gateway parity with Python SDK. */
 export const HEADER_PREFIX = 'x-shashu';
@@ -154,7 +153,7 @@ export const TRUSTLOG_HEADER_PREFIX = 'x-trustlog-';
 /**
  * Trace id minted at ORIGIN (no active span, no captured A2A flow), mirroring the Python
  * SDK's _get_trace_id(): prefer the managed runtime's own execution id so the trace joins
- * the run (n8n, GitHub Actions, GitLab CI), else a fresh UUID.
+ * the run (n8n, GitHub Actions, GitLab CI), else a fresh 32-hex trace id.
  */
 function resolveOriginTraceId(): string {
   const n8n = process.env.N8N_EXECUTION_ID;
@@ -163,7 +162,7 @@ function resolveOriginTraceId(): string {
   if (github) return github;
   const gitlab = process.env.CI_PIPELINE_ID;
   if (process.env.GITLAB_CI && gitlab) return gitlab;
-  return randomUUID();
+  return mintTraceId();
 }
 
 /**
@@ -296,7 +295,7 @@ export interface InvocationHeaderOptions {
  * mid-flow); `hopDepth` -> tracer.outboundHopDepth; `sessionId` -> the captured session.
  */
 export function buildInvocationHeaders(opts: InvocationHeaderOptions): Record<string, string> {
-  const trace = opts.traceId ?? tracer.traceId ?? randomUUID();
+  const trace = opts.traceId ?? tracer.traceId ?? mintTraceId();
   const hop = opts.hopDepth ?? tracer.outboundHopDepth;
   // Session precedence is resolved in exactly ONE place, `resolveSessionId`.
   // This used to be a second, independent `opts.sessionId ?? tracer.sessionId`,

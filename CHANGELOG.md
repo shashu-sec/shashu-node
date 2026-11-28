@@ -5,6 +5,22 @@ documented here. This project adheres to [Semantic Versioning](https://semver.or
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-11-27
+
+Changed: trace ids the SDK creates are now the 32-character standard form
+(lowercase hex, no dashes), the form the gateway stores, so an id you read from
+the SDK finds the same trace in SHASHU. A trace id you pass in is still sent
+unchanged.
+
+Fixed: the SDK installs next to the Vercel AI SDK (`ai`) 6 and 7. It still works
+with 3, 4 and 5.
+
+Fixed: `fetchStream` no longer warns that streaming is unsupported. The gateway
+streams; the README's "Streaming (SSE)" section says how.
+
+Docs: "One trace for a run of calls" explains how to keep several calls in one
+trace with `tracer.span()`. Calls outside a span still get a trace each.
+
 ## [1.2.0] — 2026-11-26
 
 BREAKING: framework state keys are now `shashu_session_id` / `shashu_trace_id`.

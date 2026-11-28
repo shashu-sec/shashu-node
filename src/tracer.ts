@@ -2,6 +2,15 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 import { isDisabled, optionalBaseUrl, envGet, API_KEY_ENV } from './config.js';
 
+/**
+ * A new trace id in the standard form: 32 lowercase hex characters, no dashes
+ * (the W3C trace-id form the gateway stores). Only ids the SDK mints go through
+ * here; an id the caller or the environment supplies is used as given.
+ */
+export function mintTraceId(): string {
+  return randomUUID().replace(/-/g, '');
+}
+
 // Types
 export interface SpanContext {
   traceId: string;
@@ -257,7 +266,7 @@ class Tracer {
 
     // Resolve Context. A span inside a captured A2A flow inherits the captured trace so
     // the flow stays one lineage (parity with the Python reference).
-    const traceId = parent?.traceId ?? a2aStorage.getStore()?.traceId ?? randomUUID();
+    const traceId = parent?.traceId ?? a2aStorage.getStore()?.traceId ?? mintTraceId();
     const spanId = randomUUID();
     const parentId = parent?.spanId;
 

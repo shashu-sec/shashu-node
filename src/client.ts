@@ -34,28 +34,6 @@ const USER_AGENT = `shashu-node/${SDK_VERSION}`;
  */
 const joiningFetch = withRetrievalJoiner();
 
-/**
- * Streaming is not yet supported end-to-end by the Shashu gateway: the
- * proxy buffers `/v1/chat/completions` and returns a full JSON body
- * regardless of the `stream` flag (the gateway's deferred-deanonymize step
- * runs egress security scans on the whole response dict, so true SSE
- * pass-through is intentionally disabled). `fetchStream` therefore does not
- * deliver incremental tokens against a Shashu gateway — it degrades to
- * the buffered JSON response. Warn once per process so callers aren't misled.
- */
-let streamingInertWarningEmitted = false;
-function warnStreamingInert(): void {
-  if (streamingInertWarningEmitted) return;
-  streamingInertWarningEmitted = true;
-  // eslint-disable-next-line no-console
-  console.warn(
-    '[shashu] Streaming is not yet supported end-to-end: the gateway buffers ' +
-      '/v1/chat/completions and returns full JSON regardless of the `stream` flag, so no ' +
-      'incremental tokens are produced. fetchStream() will fall back to the buffered response. ' +
-      '(warned once per process)'
-  );
-}
-
 function resolveContext(config: ShashuConfig, options?: RequestOptions): WorkflowContext {
   return options?.workflowContext ?? config.workflowContext ?? getWorkflowContextFromEnv();
 }
@@ -290,25 +268,24 @@ export class Shashu {
   }
 
   /**
-   * Perform a streaming request (SSE). Forwards the response stream; gateway
-   * attributes the request using workflow context. 403 throws ShashuError.
+   * Perform a streaming request (SSE). Sends `Accept: text/event-stream`, the
+   * workflow context and the declared retrieval on the initial request, and
+   * returns the gateway's event stream as it arrives: send `stream: true` in
+   * the body and read `response.body` incrementally.
    *
-   * NOTICE — streaming is INERT against a Shashu gateway today. The proxy
-   * always calls the provider in non-streaming mode and buffers the full
-   * response so its deferred-deanonymize / egress-scan step can run on the
-   * complete body; it emits no chat SSE regardless of the `stream` flag or
-   * DLP settings. This method consequently does not yield incremental tokens
-   * — when the response is not `text/event-stream` it returns the buffered
-   * JSON response unchanged. The method is kept (not removed) for forward
-   * compatibility once gateway streaming lands. A one-time warning is logged
-   * on first use.
+   * The gateway checks the whole answer before streaming it, so a security
+   * block (on the request or on the answer) is an error response before any
+   * event and throws the typed exception (ShashuContentFilterError on 400,
+   * ShashuPolicyViolation on 403). A response that is not `text/event-stream`
+   * is returned unchanged. A refused pass is
+   * retried once, before any byte is read; a stream is never re-sent after it
+   * starts.
    */
   async fetchStream(
     path: string,
     init: RequestInit = {},
     options?: RequestOptions
   ): Promise<Response> {
-    warnStreamingInert();
     const context = resolveContext(this.config, options);
     const url = path.startsWith('http')
       ? path
